@@ -1,0 +1,87 @@
+/**
+ * @defgroup apps Apps
+ * @brief Kastle 2 firmwares, official released as products, templates and others.
+ */
+
+/**
+ * @defgroup controls Controls
+ * @ingroup controls
+ * @brief Hardware abstractions, mostly over analog inputs.
+ */
+ 
+/**
+ * @defgroup core Core
+ * @brief Main Kastle 2 stuff, shared across all firmwares.
+ */
+
+/**
+ * @defgroup core_clocks Clock Sources
+ * @ingroup core
+ * @brief Definition of various clock sources. They all inherit the kastle2::ClockSource interface.
+ */
+
+/**
+ * @defgroup debug Debug
+ * @brief Random stuff for debug purposes.
+ */
+
+/**
+ * @defgroup dsp DSP
+ * @brief Prebuilt DSP classes and functions you can use in the firmwares.
+ */
+
+/**
+ * @defgroup dsp_control Control
+ * @ingroup dsp
+ * @brief Envelopes and others.
+ */
+/**
+ * @defgroup dsp_effects Effects
+ * @ingroup dsp
+ * @brief Make your sound richer!
+ */
+
+/**
+ * @defgroup dsp_filters Filters
+ * @ingroup dsp
+ * @brief Alter your sound.
+ */
+
+/**
+ * @defgroup dsp_math Math
+ * @ingroup dsp
+ * @brief Fixed math, fractions, interpolation etc.
+ */
+
+/**
+ * @defgroup dsp_sampling Sampling
+ * @ingroup dsp
+ * @brief Play existing sounds from the memory.
+ */
+
+/**
+ * @defgroup dsp_synthesis Synthesis
+ * @ingroup dsp
+ * @brief Create the sound.
+ */
+
+/**
+ * @defgroup dsp_utility Utility
+ * @ingroup dsp
+ * @brief Helpful stuff.
+ */
+
+ /**
+ * @defgroup peripherals Peripherals
+ * @brief Access to codecs, memories etc.
+ */
+
+ /**
+ * @defgroup testmode Test Mode
+ * @brief Kastle 2 self-test feature when holding MODE on startup. See TestMode details for patchbay wiring etc.
+ */
+
+ /**
+ * @defgroup utils Utils
+ * @brief General utils
+ */

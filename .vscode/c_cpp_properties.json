@@ -1,0 +1,33 @@
+{
+    "configurations": [
+        {
+            "name": "Kastle 2 Config",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/code/src/",
+                "${workspaceFolder}/code/src/**",
+                "${workspaceFolder}/code/lib/",
+                "${workspaceFolder}/code/lib/**",
+                "${env:PICO_SDK_PATH}/src/rp2_common/**",
+                "${env:PICO_SDK_PATH}/src/rp2040/**",
+                "${env:PICO_SDK_PATH}/src/common/**",
+                "${env:PICO_SDK_PATH}/src/boards/**",
+                "${env:PICO_SDK_PATH}/lib/tinyusb/src",
+                "${env:PICO_SDK_PATH}/lib/tinyusb/src/**",
+                "${env:PICO_SDK_PATH}/src/rp2040/hardware_structs/include",
+                "${env:PICO_SDK_PATH}/src/rp2_common/hardware_base/include",
+                "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/include"
+            ],
+            "defines": [
+                "__force_inline=__attribute__((always_inline))",
+                "CFG_TUSB_MCU",
+                "PICO_RP2040"
+            ],
+            "compilerPath": "${env:PICO_TOOLCHAIN_PATH}/arm-none-eabi-gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}

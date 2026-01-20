@@ -1,0 +1,238 @@
+/*
+MIT License
+
+Copyright (c) 2024 Vaclav Mach (Bastl Instruments)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+#pragma once
+
+#include <bitset>
+#include <cstddef>
+#include <span>
+#include "TriggerGenerator.hpp"
+
+namespace kastle2
+{
+
+/**
+ * @class Sequencer
+ * @ingroup dsp_utility
+ * @brief Simple trigger sequencer which supports TriggerGenerator.
+ * @author Vaclav Mach (Bastl Instruments)
+ * @date 2024-05-29
+ *
+ * You can set the triggers manually for each step or use TriggerGenerator to generate triggers.
+ * The CV sequencer is inspired by Rungler and can generate 8 different voltages.
+ * For another implementation (closer to the original) see KastleRungler class.
+ *
+ */
+class Sequencer
+{
+public:
+    /**
+     * @enum Feed
+     * @brief Defines how the sequencer modifies trigger and CV data when advancing steps.
+     */
+    enum class Feed
+    {
+        SAME,   ///< Keep the current value unchanged
+        INVERT, ///< Invert the current value (false becomes true, true becomes false)
+        RANDOM  ///< Replace with a random value
+    };
+
+    /**
+     * @brief Initializes the sequencer with a given length.
+     * @param length The number of steps in the sequence (default: kDefaultLength)
+     */
+    void Init(const size_t length = kDefaultLength);
+
+    /**
+     * @brief Resets the sequencer to the first step and updates output values.
+     */
+    void Reset();
+
+    /**
+     * @brief Advances the sequencer to the next step and applies feed modifications.
+     * @param trigger_feed How to modify the trigger at the new step
+     * @param cv_feed How to modify the CV bit at the new step
+     */
+    void NextStep(const Feed trigger_feed, const Feed cv_feed);
+
+    /**
+     * @brief Gets the current trigger output state.
+     * @return True if the current step has a trigger active, false otherwise
+     */
+    bool GetTriggerOutput() const;
+
+    /**
+     * @brief Sets a trigger at the current step position, useful for manual trigger injection.
+     */
+    void SetNowTrigger();
+
+    /**
+     * @brief Sets a trigger at a specific step position.
+     * @param step The step index to modify (0-based)
+     * @param value The trigger state to set (true/false)
+     */
+    void SetTrigger(const size_t step, const bool value);
+
+    /**
+     * @brief Generates triggers using the specified TriggerGenerator type.
+     * @param type The type of trigger generation algorithm to use
+     * @param input Q15 input value (0-32767) that controls the generation parameters
+     */
+    void GenerateTriggers(const TriggerGenerator::Type type, const q15_t input);
+
+    /**
+     * @brief Generates triggers using a predefined pattern table.
+     * @param input Q15 input value (0-32767) that selects which pattern from the table to use
+     * @warning Requires SetTriggerGeneratorTable() to be called first.
+     */
+    void GenerateTriggersUsingTable(const q15_t input);
+
+    /**
+     * @brief Sets the pattern table for table-based trigger generation using GenerateTriggersUsingTable().
+     * @param table Span of pattern data where each uint32_t contains a 16-step pattern
+     */
+    void SetTriggerGeneratorTable(std::span<const uint32_t> table);
+
+    /**
+     * @brief Sets the active length of the sequencer.
+     * @param length The number of steps to use (clamped in between kMinLength and kMaxLength)
+     * @warning Lengths below 6 are not recommended (since CV is based on bits 0,3,5). With length 3 you may get constant CV output.
+     */
+    void SetLength(const size_t length);
+
+    /**
+     * @brief Gets the current sequence length.
+     * @return The number of active steps in the sequence
+     */
+    size_t GetLength() const;
+
+    /**
+     * @brief Gets the current CV output value.
+     * @return CV value mapped through kVoltageMap (0-1023 range)
+     *
+     * Returns the CV output based on the current CV bit pattern. The output
+     * is generated by combining CV bits at positions (step+0), (step+3), and (step+5)
+     * to create a 3-bit index into the voltage mapping table.
+     */
+    uint32_t GetCvOutput() const;
+
+    /**
+     * @brief Gets the current step index.
+     * @return Current step position (0-based)
+     */
+    size_t GetCurrentStep() const { return current_step_; }
+
+    /**
+     * @brief Realigns the sequencer to a specific step position.
+     * @param steps The step number to align to (will be wrapped to sequence length)
+     *
+     * Immediately moves the sequencer to the specified step position, wrapping
+     * around the sequence length. Updates CV and trigger outputs for the new position.
+     */
+    void RealignTo(const size_t steps);
+
+    /**
+     * @brief Prepares the CV output for the next step in advance.
+     * @return True if the CV output just changed, false if already prepared
+     *
+     * This should be called when the clock is about to advance to the next step,
+     * allowing the CV output to be updated in advance. This prevents glitches
+     * and ensures the CV value is ready when the step actually changes.
+     */
+    bool ReachingNextCycle();
+
+    /**
+     * @brief Minimum number of steps supported by the sequencer.
+     */
+    static constexpr size_t kMinLength = 2;
+
+    /**
+     * @brief Maximum number of steps supported by the sequencer.
+     */
+    static constexpr size_t kMaxLength = 64;
+
+    /**
+     * @brief Default number of steps for the sequencer.
+     */
+    static constexpr size_t kDefaultLength = 16;
+
+    /**
+     * @brief Voltage mapping table for CV output generation.
+     * Maps 3-bit CV indices (0-7) to voltage values in the 0-1023 range.
+     * Taken from the original Kastle code and shifted to match the output range.
+     */
+    static constexpr uint32_t kVoltageMap[8] = {0, 320, 480, 600, 720, 800, 880, 1020};
+
+private:
+    /**
+     * @brief Updates the CV output based on current CV bit pattern.
+     */
+    void UpdateCvOutput();
+
+    /**
+     * @brief Updates the trigger output for the current step.
+     */
+    void UpdateTriggerOutput();
+
+    /**
+     * @brief Bitset storing trigger states for each step.
+     */
+    std::bitset<kMaxLength> triggers_;
+
+    /**
+     * @brief Bitset storing CV bit states for each step. From this a 3-bit index is made to the voltage map is created.
+     */
+    std::bitset<kMaxLength> cv_bits_;
+
+    /**
+     * @brief Current trigger output state.
+     */
+    bool trigger_output_ = false;
+
+    /**
+     * @brief Active sequence length.
+     */
+    size_t length_ = 0;
+
+    /**
+     * @brief Current step position in the sequence.
+     */
+    size_t current_step_ = 0;
+
+    /**
+     * @brief Current CV output value in 0-1023 range.
+     */
+    uint32_t cv_output_ = 0;
+
+    /**
+     * @brief Reference to the pattern table for table-based trigger generation.
+     */
+    std::span<const uint32_t> generator_table_;
+
+    /**
+     * @brief Flag indicating if CV is being prepared for the next cycle.
+     */
+    bool reaching_next_cycle_ = false;
+};
+}

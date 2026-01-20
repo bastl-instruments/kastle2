@@ -1,0 +1,189 @@
+{
+    "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "target",
+            "type": "pickString",
+            "description": "Choose the build target",
+            "options": [
+                "calibration",
+                "fx-wizard",
+                "wave-bard",
+                "wave-bard-with-samples",
+                "example-synth",
+                "sampler",
+                "template"
+            ],
+            "default": "wave-bard"
+        }
+    ],
+    "tasks": [
+        {
+            "label": "clean",
+            "type": "process",
+            "command": "make",
+            "options": {
+                "cwd": "${workspaceRoot}/code/build"
+            },
+            "presentation": {
+                "showReuseMessage": false,
+                "group": "pico"
+            },
+            "args": [
+                "clean"
+            ]
+        },
+        {
+            "label": "upload_usb",
+            "type": "process",
+            "command": "picotool",
+            "options": {
+                "cwd": "${workspaceRoot}/code/build/output"
+            },
+            "presentation": {
+                "showReuseMessage": false,
+                "group": "pico"
+            },
+            "args": [
+                "load",
+                "-v",
+                "-x",
+                "kastle2-${input:target}.uf2",
+                "-f"
+            ]
+        },
+        {
+            "label": "upload_jlink",
+            "type": "process",
+            "command": "JLinkExe",
+            "presentation": {
+                "showReuseMessage": false,
+                "group": "pico"
+            },
+            "args": [
+                "-device",
+                "RP2040_M0_0",
+                "-if",
+                "SWD",
+                "-speed",
+                "4000",
+                "-autoconnect",
+                "1",
+                "-CommanderScript",
+                "${workspaceRoot}/code/build/kastle2-${input:target}-upload.jlink"
+            ]
+        },
+        {
+            "label": "upload_picoprobe",
+            "type": "process",
+            "command": "openocd",
+            "presentation": {
+                "showReuseMessage": false,
+                "group": "pico"
+            },
+            "args": [
+                "-f",
+                "interface/cmsis-dap.cfg",
+                "-f",
+                "target/rp2040.cfg",
+                "-c",
+                "adapter speed 5000",
+                "-c",
+                "program ${workspaceRoot}/code/build/output/kastle2-${input:target}.elf verify reset exit"
+            ]
+        },
+        {
+            "label": "configure",
+            "type": "process",
+            "command": "./configure.sh",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "presentation": {
+                "clear": true,
+                "showReuseMessage": false,
+                "group": "pico"
+            }
+        },
+        {
+            "label": "build_all",
+            "type": "process",
+            "command": "make",
+            "options": {
+                "cwd": "${workspaceRoot}/code/build"
+            },
+            "presentation": {
+                "clear": true,
+                "showReuseMessage": false,
+                "group": "pico"
+            },
+            "args": [
+                "all"
+            ]
+        },
+        {
+            "label": "build",
+            "type": "process",
+            "command": "make",
+            "options": {
+                "cwd": "${workspaceRoot}/code/build"
+            },
+            "presentation": {
+                "clear": true,
+                "showReuseMessage": false,
+                "group": "pico"
+            },
+            "args": [
+                "${input:target}"
+            ]
+        },
+        {
+            "label": "build_and_upload_usb",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build",
+                "upload_usb"
+            ]
+        },
+        {
+            "label": "build_and_upload_jlink",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build",
+                "upload_jlink"
+            ]
+        },
+        {
+            "label": "build_and_upload_picoprobe",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build",
+                "upload_picoprobe"
+            ]
+        },
+        {
+            "label": "make_docs",
+            "type": "process",
+            "command": "doxygen",
+            "options": {
+                "cwd": "${workspaceRoot}/code"
+            },
+            "presentation": {
+                "showReuseMessage": false,
+                "group": "pico"
+            },
+        },
+        {
+            "label": "make_docs_and_open",
+            "type": "shell",
+            "command": "open",
+            "args": [
+                "${workspaceFolder}/code/docs/output/index.html"
+            ],
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "make_docs",
+            ]
+        }
+    ]
+}

@@ -1,0 +1,27 @@
+# Code build
+code/build/
+code/docs/output/
+
+# Pico SDK
+code/pico-sdk/
+
+# Bitwig
+bitwigPrototype/glitchFXkastle/auto-backups
+
+# Ugly system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# MS Office temporary files
+~$*
+
+# Eagle backup files
+*.b#?
+*.s#?
+
+# VS Code
+.vscode/settings.json
+
+# Vim
+*.sw?
