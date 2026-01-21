@@ -22,7 +22,7 @@ If you make Kastle 2-derived instruments, please remember to follow the license 
 
 ## How to contribute to the Kastle 2?
 
-You are free to open issues and pull requests; please name your branches accordingly (`feature/...`, `bugfix/...`). Before contributing please make sure you read [Toolchain Install Guide](TOOLCHAIN_INSTALL.md), [Coding Style Guide](CODING_STYLE.md) and [Glossary & Examples](GLOSSARY_EXAMPLES.md).
+See the [CONTRIBUTING](CONTRIBUTING.md) file.
 
 ## The compiler says...
 

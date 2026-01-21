@@ -10,7 +10,7 @@ Comes with open-source codebase (including two official firmwares) and schematic
 ## How to develop for Kastle 2
 
 Read [Toolchain Install Guide](TOOLCHAIN_INSTALL.md), [Coding Style Guide](CODING_STYLE.md) and [Glossary & Examples](GLOSSARY_EXAMPLES.md).  
-Any questions or weird stuff hapenning? See the [FAQ](FAQ.md).
+Any questions or weird stuff hapenning? See the [FAQ](FAQ.md) or discuss your experience on our [Discord server](https://discord.com/invite/C4RXRjgYJ6).
 
 ## Specifications
 
