@@ -21,7 +21,6 @@
                 "wave-bard",
                 "wave-bard-with-samples",
                 "example-synth",
-                "sampler",
                 "template"
             ],
             "default": "wave-bard"
