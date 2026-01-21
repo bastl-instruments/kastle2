@@ -1,6 +1,6 @@
 # Kastle 2
 
-*Compatible with Citadel*
+*Compatible with [Bastl Instruments Citadel](https://github.com/bastl-instruments/citadel)*
 
 A modular DSP platform that fits into your pocket!  
 Comes with open-source codebase (including two official firmwares) and schematics.
@@ -50,9 +50,6 @@ All outputs are designed to provide 0-5V (0V to the input voltage, respectively)
 
 Power consumption is approximately 100-150 mA, allowing for up to 15-18 hours of use on 3xAA batteries.
 
-## Citadel
-
-[Bastl Instruments Citadel](https://github.com/bastl-instruments/citadel) is a Eurorack adaptation of the Kastle 2 family. It's directly compatible with the Kastle 2 firmwares, there are no extra Citadel builds. The firmware itself detects the variant it's running on (based on the MIDI pull-up resistor on RX line) and adjusts necessary parameters.
 
 ## Open Source Firmwares
 
@@ -65,6 +62,17 @@ Nine time-based audio effects, with DJ-style lowpass/highpass filter.
 Stereo sample player featuring unique sequencing techniques.
 
 And other examples, see the `code/src/apps` subfolder.
+
+## Useful links
+
+**[Citadel repository](https://github.com/bastl-instruments/citadel)**  
+A Eurorack adaptation of the Kastle 2 family. It's directly compatible with the Kastle 2 firmwares, there are no extra Citadel firmware builds. The firmware itself detects the variant it's running on (based on the MIDI pull-up resistor on RX line) and adjusts necessary parameters.
+
+**[Kastle 2 Web Apps repository](https://github.com/bastl-instruments/kastle2-webapps)**  
+Source codes for Wave Bard Sample Loader, Alchemist Laboratory…
+
+**[Kastle 2 Label Maker repository](https://github.com/bastl-instruments/kastle2-labelmaker)**  
+Source code for a tool which helps you visualize Kastle 2 app ideas.
 
 ## Credits
 
