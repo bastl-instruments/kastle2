@@ -127,6 +127,9 @@ If you don't have any probe and you have a Raspberry Pi Pico laying around, you 
 
 Solder cable to the pins depending on your platform.
 
+> [!WARNING]
+> Soldering the connector and other board modification void the official warranty and you do it at your own risk.
+
 **Raspberry Pi Debug Probe** requires: SWDIO, SWCLK, GND.  
 **Segger J-Link Debug Probe** requires: SWDIO, SWCLK, GND, VDD, RESET.
 
@@ -142,12 +145,18 @@ Solder cable to the pins depending on your platform.
 
 <img src="./images/toolchain-install/pico-probe-3d-enclosure.jpg" width="450" alt="Custom 3D printed enclosure" /> 
 
+### Citadel
+
+For wiring the Citadel follow the instructions at the [Citadel README file](https://github.com/bastl-instruments/citadel/blob/main/README.md).
+
 
 ### VS Code
 Make sure you have [Cortex Debug](https://marketplace.visualstudio.com/items?itemName=marus25.cortex-debug) extension installed. Go to `Run and Debug` section and select `J-Link Debug` or `Pico Probe` according to which of debug probes you have. Starting the debug process automatically builds the code and uploads it to the Kastle 2.
 
-## Build docs
+## Docs
 
-Run VS Code command `make_docs` or cd manually into `code` folder and run `doxygen` command.
+The generated documentation is hosted here: [Kastle 2 Code Documentation](http://apps.bastl-instruments.com/kastle2-docs)
+
+For building your own, run VS Code command `make_docs` or cd manually into `code` folder and run `doxygen` command.
 
 The docs are located in `code/docs/output` and are in gitignore to keep the repository clean.

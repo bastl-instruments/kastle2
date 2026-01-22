@@ -1,5 +1,7 @@
 # Kastle 2 Glossary & Examples
 
+*See [Kastle 2 Code Documentation](http://apps.bastl-instruments.com/kastle2-docs) for the specific classes and methods.*
+
 ## App 
 
 A complete firmware application that runs on your Kastle 2. Each app inherits from the virtual `App` base class and implements four core methods:
@@ -306,9 +308,9 @@ void AppExample::UiLoop() {
 
 ## Test Mode
 
-Diagnostic and testing system incorporated into every Kastle 2 firmware. Users can enter test mode by holding the MODE button during startup. At the beginning the current firmware version is announced. Then the test mode runs automated tests that verify hardware functionality, including audio I/O, potentiometer readings, button responses and patchbay.
+Diagnostic and testing system incorporated into every Kastle 2 firmware. Users can enter test mode by holding the MODE button during startup. At the beginning the current firmware version is announced. Then the test mode runs automated tests that verify hardware functionality, including audio I/O, potentiometer readings, button responses and patchbay (see image below for the wiring). The test results are continously outputed using UART over USB (baud rate 115200).
 
-See [kastle2-test-mode-patch.pdf](kastle2-test-mode-patch.pdf) for detailed patching instructions.
+<img src="./images/glossary-examples/kastle2-testmode-wiring.png" width="300" alt="Kastle 2 Test Mode wiring to pass the test" /> 
 
 ## Universal Firmware (Kastle 2 / Citadel)
 
