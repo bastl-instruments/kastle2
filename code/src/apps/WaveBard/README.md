@@ -18,3 +18,5 @@ This file contains the factory default samples. You can generate a new file usin
 http://apps.bastl-instruments.com/wave-bard-sample-loader/?advanced=1
 
 After swapping SAMPLES.bin make sure to call task `clean` to make a clean build, otherwise CMake might store previously generated output.
+
+*Regarding samples: The SAMPLES.BIN file in the repository should not be commercially distributed as part of a custom-built firmware, nor separately, as it is marked “All rights reserved.” However, using the official compiled firmware provided by Bastl (which includes the samples) is fine.*

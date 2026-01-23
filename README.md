@@ -103,3 +103,5 @@ All rights reserved
 All rights reserved
 
 *Note: You are welcome to create derived products based on the schematics and software. However, Bastl retains proprietary rights to the board layout, which is not publicly available. This prevents simple product cloning and maintains the integrity of the original Kastle 2. By purchasing an original Bastl Instruments Kastle 2 you support ongoing development.*
+
+*Regarding samples: The SAMPLES.BIN file in the repository should not be commercially distributed as part of a custom-built firmware, nor separately, as it is marked “All rights reserved.” However, using the official compiled firmware provided by Bastl (which includes the samples) is fine.*
