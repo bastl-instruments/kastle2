@@ -985,9 +985,9 @@ void Base::BeforeUiLoop()
         sleep_ms(200);
         if (Kastle2::memory.WriteDefaultSettings())
         {
-            if (Kastle2::app_ != nullptr)
+            if (Kastle2::app != nullptr)
             {
-                Kastle2::app_->MemoryInitialization();
+                Kastle2::app->MemoryInitialization();
             }
             // Blink all LEDs green until both buttons are released
             while (Kastle2::hw.GetRawButtonState(Hardware::Button::SHIFT) || Kastle2::hw.GetRawButtonState(Hardware::Button::MODE))

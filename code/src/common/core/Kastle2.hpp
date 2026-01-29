@@ -89,7 +89,7 @@ public:
     /**
      * @brief Pointer to the current app.
      */
-    static inline App *app_ = nullptr;
+    static inline App *app = nullptr;
 
     /**
      * @brief Initializes the Kastle 2 (HW, memory, base, etc.) together with test mode startup message (=version chain).
@@ -151,10 +151,10 @@ public:
 
     /**
      * @brief Stores the custom App ID in the EEPROM. If there is a different app stored, call initialization.
-     * @param app Main program class which inherits from App.
+     * @param app_to_register Main program class which inherits from App.
      * @return True if different to the stored version and new version stored successfully.
      */
-    static bool RegisterApp(App *app);
+    static bool RegisterApp(App *app_to_register);
 
     /**
      * @brief In case your UiLoop is too slow, you can call this function to keep the USB working.

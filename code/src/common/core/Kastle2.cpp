@@ -240,9 +240,9 @@ void Kastle2::AudioCallback(q15_t *input, q15_t *output, size_t size)
 #endif
 }
 
-bool Kastle2::RegisterApp(App *app)
+bool Kastle2::RegisterApp(App *app_to_register)
 {
-    app_ = app;
+    app = app_to_register;
     uint8_t app_id = app->GetId();
     uint8_t stored_id;
     if (!memory.Read8(Memory::ADDR_APP_ID, &stored_id))
