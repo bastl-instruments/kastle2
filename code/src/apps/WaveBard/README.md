@@ -4,6 +4,12 @@ Sample player firmware for the Kastle 2 platform. Has three main parameters: Sam
 Bank button switches between banks.   
 By default there are 6 banks of 8 samples.
 
+## How to build
+
+Running `make wave-bard` produces a firmware image with just the app itself—ideal for development or upgrade process.
+
+Running `make wave-bard-with-samples` builds the app and appends the data from SAMPLES.bin, creating the complete firmware. That's the way the official firmwares are generated.
+
 ## Wave Bard Sample Format
 
 The samples, scales and rhythms are packed in a special format. You can find the specs in the [WAVE_BARD_FORMAT.md](WAVE_BARD_FORMAT.md).
@@ -13,7 +19,7 @@ The samples, scales and rhythms are packed in a special format. You can find the
 Factory audio samples:  
 Copyright (c) 2025 Oliver Torr for Bastl Instruments. All rights reserved.  
 
-This file contains the factory default samples. You can generate a new file using Wave Bard Sample Loader with "Advanced" option on. In click on button labeled `BIN` to download the binary file containing samples.
+This file contains the factory default samples. You can generate a new file using Wave Bard Sample Loader with "Advanced" option on. In click on button labeled `GENERATE BIN` to download the binary file containing samples.
 
 http://apps.bastl-instruments.com/wave-bard-sample-loader/?advanced=1
 
