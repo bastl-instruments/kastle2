@@ -2,7 +2,53 @@
 
 ## Introduction
 
-You need to install GIT, Python 3, CMake, GNU Embedded Toolchain for ARM, Picotool (optional) and Doxygen (optional). For the development itself we recommend using VS Code, but you can use any editor/enviroment you like.
+You need to install GIT, Python 3, CMake, GNU Embedded Toolchain for ARM, Picotool (optional) and Doxygen (optional). For the development itself we recommend using VS Code, but you can use any editor/environment you like.
+
+For beginners, we recommend the [Automated Install](#automated-install-nix); for advanced users who regularly develop for ARM, we recommend the [Manual Install](#manual-install).
+
+## Clone the GitHub repository
+
+The starting point for both installation methods.
+
+```
+git clone https://github.com/bastl-instruments/kastle2.git
+```
+
+## Automated Install (Nix)
+
+The easiest way to get started is with Nix — an isolated development environment that automatically installs all the requirements. It runs natively on macOS/Linux and won't interfere with your existing system tools. Thanks very much to [@euphemism](https://github.com/euphemism) for creating the Nix‑based development setup.
+
+### Nix install
+Make sure Nix is installed (check with `nix --version`). If it's not, install it from the [official website](https://nixos.org/download/).  
+Enable Flakes by adding this line to `~/.config/nix/nix.conf`:
+```
+experimental-features = nix-command flakes
+```
+
+### Using the Nix shell
+
+Go into the `kastle2` folder and start the Nix development environment. The first setup may take a few minutes, subsequent shells are fast.
+```
+nix develop .#
+```
+This shell automatically runs `./configure.sh` on first use (when the build folder doesn't exist).  
+Go into `code/build` and run `make` to build all firmwares or `make <app-name>` to build a specific one.  
+Launch your editor from within the Nix shell so it inherits the environment variables.
+
+```
+cd code/build
+
+make wave-bard
+make wave-bard-with-samples
+
+code
+```
+
+You can find the compiled firmwares inside `code/build/output`.  
+If you successfully installed the Kastle 2 Development shell, jump to the [Debugging section](#debugging) to continue.
+
+
+## Manual Install
 
 If you have already ARM Toolchain installed make sure it's version `14.2.1 20241119` or above by running:
 ```
@@ -14,7 +60,7 @@ In case you have more than one ARM Toolchains installed (eg. you are using Daisy
 $PICO_TOOLCHAIN_PATH/arm-none-eabi-gcc --version
 ```
 
-### MacOS (brew)
+#### MacOS (brew)
 
 Make sure you have [Homebrew](https://brew.sh/) installed.
 Then run these.
@@ -30,7 +76,7 @@ export PICO_TOOLCHAIN_PATH=/Users/username/arm_kastle/bin
 ```
 
 
-### Linux (apt – Ubuntu/Debian)
+#### Linux (apt – Ubuntu/Debian)
 
 ```
 sudo apt update
@@ -39,18 +85,18 @@ sudo apt install git cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essen
 
 If you want to upload the code automatically using USB, download and build `picotool` using this tutorial:  https://github.com/raspberrypi/picotool You can find a detailed tutorial how to build it in [Getting started with Pico](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf) document, around page 75.
 
-### Linux (pacman – Arch)
+#### Linux (pacman – Arch)
 
 ```
 sudo pacman -Syu
 sudo pacman -S git cmake arm-none-eabi-gcc arm-none-eabi-newlib doxygen
 ```
 
-### Windows
+#### Windows
 
 The easiest way is to follow the [Raspberry Pi Pico-series guide](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf).
 
-## Get the Raspberry Pi Pico SDK
+### Get the Raspberry Pi Pico SDK
 
 This applies to MacOS and Linux installations.
 
@@ -67,40 +113,34 @@ Inside this folder, run this command in order to download additional libraries.
 git submodule update --init
 ```
 
-In your enviroment set PICO_SDK_PATH to the SDK location.
+In your environment set PICO_SDK_PATH to the SDK location.
 
-### Linux
+#### Linux
 
 Add this line into `~/.bashrc`. Tilde symbol `~` is your user's home directory. If the file doesn't exist, create it.
 ```
 export PICO_SDK_PATH=/path/to/your/pico-sdk
 ```
 
-### Mac OS
+#### Mac OS
 Add this line into `~/.zshrc`. Tilde symbol `~` is your user's home directory. If the file doesn't exist, create it.
 ```
 export PICO_SDK_PATH=/path/to/your/pico-sdk
 ```
 
-## Get the Kastle 2 code
+### Configure and compile it
 
-```
-git clone https://github.com/bastl-instruments/kastle2.git
-```
-
-## Configure and compile it
-
-### VS Code
+#### VS Code
 
 If you used VS Code for editing `.zshrc` or `.bashrc` file, restart it for the `export` to make effect.
 
 Open the whole project folder (not just `code` subfolder) and run task called `configure`. Or use CMake extension to configure it. Then you can run `build_and_upload_usb` to upload the code into Kastle 2 via USB. If the USB upload doesn't work, turn off the Kastle 2 and hold SHIFT and power it on to enter the bootloader mode. Or use `build_and_upload_jlink` for J-Link upload. See section below for the available debuggers.
 
-### Or run configure.sh
+#### Or run configure.sh
 ```
 ./configure.sh
 ```
-### Or manually run this
+#### Or manually run this
 ```
 mkdir code/build
 cd code/build
