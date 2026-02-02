@@ -83,7 +83,9 @@ sudo apt update
 sudo apt install git cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential libstdc++-arm-none-eabi-newlib doxygen
 ```
 
-If you want to upload the code automatically using USB, download and build `picotool` using this tutorial:  https://github.com/raspberrypi/picotool You can find a detailed tutorial how to build it in [Getting started with Pico](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf) document, around page 75.
+If you want to upload the code automatically using USB, download and build `picotool` using this tutorial:  https://github.com/raspberrypi/picotool You can find a detailed tutorial how to build it in [Getting started with Pico](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf) document, around page 25.
+
+If you are running Ubuntu, you need to be on version 25 (Questing Quokka) or later for apt to install the correct version of the ARM Toolchain. If upgrading a WSL Ubuntu install, it may be necessary to [remove the `snapd` package](https://askubuntu.com/questions/1428423/upgrade-ubuntu-in-wsl2-from-20-04-to-22-04) before upgrading. 
 
 #### Linux (pacman – Arch)
 
