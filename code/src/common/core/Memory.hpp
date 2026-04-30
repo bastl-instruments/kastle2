@@ -67,6 +67,7 @@ public:
     static constexpr size_t ADDR_CLOCK_MULTIPLIER = ADDR_BASE_SPACE + 0x0B;   // 8-bit number
     static constexpr size_t ADDR_CLOCK_MIDI_DIVIDER = ADDR_BASE_SPACE + 0x0C; // 8-bit number
     static constexpr size_t ADDR_MIDI_CHANNEL = ADDR_BASE_SPACE + 0x0D;       // 8-bit number
+    static constexpr size_t ADDR_SWING = ADDR_BASE_SPACE + 0x0E;              // 8-bit number
 
     // APP SPACE
     // ... starts at ADDR_APP_SPACE (0x50) and defined by the application

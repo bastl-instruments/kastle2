@@ -275,6 +275,10 @@ private:
     Sequencer sequencer_;
     EdgeDetector sequencer_edge_detector_{EdgeDetector::Type::RISING};
 
+    Sequencer::Feed pending_trigger_feed_ = Sequencer::Feed::SAME;
+    Sequencer::Feed pending_cv_feed_ = Sequencer::Feed::SAME;
+    bool swing_step_pending_ = false;
+
     // Volumes
     q15_t sw_input_gain_ = 0;
     q15_t sw_output_gain_ = 0;
@@ -301,6 +305,7 @@ private:
         LFO_MOD,
         OUTPUT,
         RHYTHM,
+        SWING,
         MONO_INPUT,
         SYNC_INPUT,
         COUNT
