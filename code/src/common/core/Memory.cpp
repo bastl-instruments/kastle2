@@ -107,6 +107,7 @@ bool Memory::WriteDefaultSettings()
     result &= Write8(ADDR_CLOCK_MIDI_DIVIDER, kMidiTempoDividerDefault);
     result &= Write8(ADDR_MIDI_CHANNEL, midi::Message::kAllChannels);
     result &= Write8(ADDR_MONO_SETTINGS, 0u);
+    result &= Write8(ADDR_SWING, 127u);
     result &= ClearAppSpace();
     return result;
 }
