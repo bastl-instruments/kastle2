@@ -28,6 +28,10 @@ SOFTWARE.
 
 using namespace kastle2;
 
+#define SWING_EVEN_CONTINOUS 1  // Inverted each step number (can be unpredictable when turning the swing on/off)
+#define SWING_EVEN_CONSISTENT 2 // Calculated from actual step number (always reflects the steps)
+#define SWING_EVEN SWING_EVEN_CONSISTENT
+
 void Sequencer::Init(const size_t length)
 {
     reaching_next_cycle_ = false;
@@ -224,13 +228,21 @@ void Sequencer::ScheduleSwingStep(uint32_t step_ticks)
     switch (swing_type_)
     {
     case SwingType::SWING:
-        if (swing_even_step_)
+    {
+// Handles different swing "even step" methods:
+#if SWING_EVEN == SWING_EVEN_CONTINOUS
+        const bool even_step = (swing_even_step_);
+#elif SWING_EVEN == SWING_EVEN_CONSISTENT
+        const bool even_step = (current_step_ % 2 == 0);
+#endif
+        if (even_step)
         {
             // Cap delay at half a step so even steps stay before the midpoint
             // to the next odd step (musically meaningful swing range).
             delay = static_cast<uint32_t>(step_ticks * swing_amount_ * 0.5f);
         }
-        break;
+    }
+    break;
 
     case SwingType::HUMANIZE:
     {
