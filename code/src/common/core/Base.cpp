@@ -111,9 +111,10 @@ void Base::Init()
         pot->Init(AUDIO_LOOP_RATE);
     }
 
-    // Force changed to init stuff
+    // Force "changed" flag to load values
     pots_[Pot::LFO]->ForceChanged();
     pots_[Pot::RHYTHM]->ForceChanged();
+    pots_[Pot::SWING]->ForceChanged();
 
     // MIDI Out Pots
     midi_pots_[Hardware::Pot::POT_1] = FancyPot::Create({.pot = Hardware::Pot::POT_1,
