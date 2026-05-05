@@ -232,6 +232,32 @@ public:
         return input_envelope_follower_;
     }
 
+    /**
+     * @brief Base Potentiometers
+     */
+    enum class Pot
+    {
+        TEMPO,
+        INPUT,
+        LFO,
+        LFO_MOD,
+        OUTPUT,
+        RHYTHM,
+        SWING,
+        MONO_INPUT,
+        SYNC_INPUT,
+        COUNT
+    };
+
+    /**
+     * @brief Returns the array of FancyPot instances for the base pots.
+     * @return EnumArray<Pot, std::unique_ptr<FancyPot>>& Reference to the array of FancyPot instances.
+     */
+    inline const EnumArray<Pot, std::unique_ptr<FancyPot>> &GetPots()
+    {
+        return pots_;
+    }
+
 private:
     // How much amplify the input volume
     static constexpr int8_t kInputGainShiftLeft = 3;
@@ -296,20 +322,6 @@ private:
     };
     StartupEnvState startup_env_state_ = StartupEnvState::OUTPUT;
 
-    // Pots
-    enum class Pot
-    {
-        TEMPO,
-        INPUT,
-        LFO,
-        LFO_MOD,
-        OUTPUT,
-        RHYTHM,
-        SWING,
-        MONO_INPUT,
-        SYNC_INPUT,
-        COUNT
-    };
     EnumArray<Pot, std::unique_ptr<FancyPot>> pots_;
 
     // MIDI Out Pot stuff

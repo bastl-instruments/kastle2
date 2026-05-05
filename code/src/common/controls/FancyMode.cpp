@@ -50,6 +50,7 @@ void FancyMode::Init(uint32_t modes_count)
     SetModesCount(modes_count);
     LoadFromMemory();
     RecalculateMode();
+    AddBaseTweakPots();
 }
 
 void FancyMode::Process()
@@ -285,6 +286,18 @@ void FancyMode::SaveToMemory()
     if (config_.memory_addr != NO_MEMORY)
     {
         Kastle2::memory.Write8(config_.memory_addr, selected_mode_);
+    }
+}
+
+void FancyMode::AddBaseTweakPots()
+{
+    auto &base_pots = Kastle2::base.GetPots();
+    for (const auto &pot : base_pots)
+    {
+        if (pot && pot->GetLayer() == Hardware::Layer::MODE)
+        {
+            tweak_pots_.push_back(pot.get());
+        }
     }
 }
 
