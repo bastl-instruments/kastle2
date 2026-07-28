@@ -123,6 +123,7 @@ SET(KASTLE2_COMMON_SOURCES
     ${SRC}/common/core/midi/Message.cpp
     ${SRC}/common/core/Clock.cpp
     ${SRC}/common/core/Hardware.cpp
+    ${SRC}/common/core/LfoMod.cpp
     ${SRC}/common/core/Memory.cpp
     ${SRC}/common/controls/FancyPot.cpp
     ${SRC}/common/controls/FancyMode.cpp
@@ -244,6 +245,12 @@ function(generate_output_files APP_NAME)
     # Make sure the target depends on the generated script
     add_dependencies(${APP_NAME} ${APP_NAME}_upload_script)
 
+    # The copied UF2 artifact in the shared output directory is created by a
+    # post-build step, so register it explicitly for `make clean`.
+    set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${FILENAME}.uf2"
+    )
+
     # Manually move the generated UF2, BIN, HEX files to the output directory
     if(${PICO_SDK_VERSION_STRING} VERSION_LESS "2")
         # For Pico SDK version < 2, add all copy commands
@@ -272,6 +279,11 @@ function(create_data_merged_target APP_NAME APP_NAME_WITH_USER_DATA USER_DATA_SR
     set(MERGED_UF2_FILE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_WITH_DATA_FILENAME}.uf2)
     
 if(EXISTS ${USER_DATA_SRC_FILE})
+    set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        "${MERGED_HEX_FILE}"
+        "${MERGED_UF2_FILE}"
+    )
+
         # Generate JLink script for the merged target
         set(SCRIPT_PATH "${CMAKE_BINARY_DIR}/${PROJECT_NAME}-${APP_NAME_WITH_USER_DATA}-upload.jlink")
         create_jlink_script_from_hex(${MERGED_HEX_FILE} ${SCRIPT_PATH})

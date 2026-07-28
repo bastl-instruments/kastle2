@@ -155,7 +155,6 @@ private:
         PITCH_QUANTIZED,
         ENVELOPE,
         ENVELOPE_MOD,
-        BANK_MOD,
         FX,
         FILTER,
         AUDIO_ROUTE,
@@ -286,15 +285,6 @@ private:
     bool sample_play_on_change_;
 
     /**
-     * @brief Returns maximum CV value for sample selection based on hardware version.
-     * @return ADC_4V for KASTLE2 (to reach last sample on AA batteries), ADC_5V for others (=CITADEL).
-     */
-    inline int32_t SampleCvMaxValue()
-    {
-        return (Kastle2::hw.GetVersion() == Hardware::Version::KASTLE2 ? ADC_4V : ADC_5V);
-    }
-
-    /**
      * @brief Sticky map value for sample modulation to reduce jitter.
      */
     int32_t sticky_sample_mod_ = INT32_MAX;
@@ -303,6 +293,13 @@ private:
      * @brief Sticky map value for continuous sample modulation to reduce jitter.
      */
     int32_t sticky_sample_continous_mod_ = INT32_MAX;
+
+    /**
+     * @brief Previous values of lfo modulation fo change detection.
+     */
+    int32_t lfo_mod_octave_prev_ = 0;
+    int32_t lfo_mod_scale_prev_ = 0;
+    int32_t lfo_mod_root_prev_ = 0;
 
     /**
      * @brief Previous base envelope value for change detection.

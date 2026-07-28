@@ -27,12 +27,14 @@ SOFTWARE.
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 #include "common/controls/FancyPot.hpp"
 #include "common/core/Clock.hpp"
 #include "common/core/Codec.hpp"
 #include "common/core/FakeBlinker.hpp"
 #include "common/core/Hardware.hpp"
 #include "common/core/Kastle2_parameters.hpp"
+#include "common/core/LfoMod.hpp"
 #include "common/core/Memory.hpp"
 #include "common/core/midi/Message.hpp"
 #include "common/dsp/control/AdsrEnv.hpp"
@@ -77,6 +79,7 @@ public:
         AUDIO_CHAIN,           ///< Audio chain (input -> output), disable in processing the audio by yourself.
         MIDI_CLOCK,            ///< MIDI input clock handling.
         GATE_INDICATION,       ///< Gate indication on the top right LED.
+        LFO_MOD_MAPPING,       ///< LFO modulation mapping to pots (SHIFT + POT).
         COUNT
     };
 
@@ -151,6 +154,15 @@ public:
      * @return Lfo& Reference to the LFO object.
      */
     Lfo &GetLfo();
+
+    /**
+     * @brief Returns the LfoMod object
+     * @return LfoMod& Reference to the LfoMod object.
+     */
+    LfoMod &GetLfoMod()
+    {
+        return lfo_mod_;
+    }
 
     /**
      * @brief Set the HP amp output volume in range 0-63. Ideally keep it under 60 to prevent noise etc.
@@ -232,7 +244,34 @@ public:
         return input_envelope_follower_;
     }
 
+    /**
+     * @brief Enables or disables selecting multiple LFO modulation destinations from settings pots.
+     * @param enabled True to allow selecting the destinations, false to block selection from UI pots.
+     * @param destinations Destinations to enable or disable. (multiple can be written, e.g. LfoMod::Destination::NORMAL_1, LfoMod::Destination::NORMAL_2)
+     */
+    template <typename... Destination>
+    void SetLfoModSelectionEnabled(bool enabled, Destination... destinations)
+    {
+        static_assert((std::is_same_v<std::remove_cv_t<std::remove_reference_t<Destination>>, LfoMod::Destination> && ...),
+                      "All arguments must be LfoMod::Destination");
+
+        (SetLfoModSelectionEnabledSingle(enabled, destinations), ...);
+    }
+
+    /**
+     * @brief Enables or disables selecting all LFO modulation destinations from settings pots.
+     * @param enabled True to allow all destinations, false to block all destinations.
+     */
+    void SetAllLfoModSelectionEnabled(bool enabled);
+
+    /**
+     * @brief Resets the LFO modulation selection to the default state. (all secondary enabled + lfo mod)
+     */
+    void SetLfoModDefaultSelectionEnabled();
+
 private:
+    void SetLfoModSelectionEnabledSingle(bool enabled, LfoMod::Destination destination);
+
     // How much amplify the input volume
     static constexpr int8_t kInputGainShiftLeft = 3;
 
@@ -247,6 +286,7 @@ private:
     uint32_t lfo_mod_state_prev = 0;
     uint32_t lfo_change_timer_ = 0;
     bool lfo_last_timer_source_ = false;
+    LfoMod lfo_mod_;
 
     // Main tempo of the device
     Clock clock_;
@@ -274,10 +314,15 @@ private:
     // Sequencer
     Sequencer sequencer_;
     EdgeDetector sequencer_edge_detector_{EdgeDetector::Type::RISING};
+    int32_t rhythm_modulation_prev_ = 0;
 
     // Volumes
     q15_t sw_input_gain_ = 0;
     q15_t sw_output_gain_ = 0;
+    q15_t input_amplitude_divider_ = Q15_MAX;
+    q15_t input_amplitude_multipler_ = Q15_MAX;
+    q15_t output_amplitude_divider_ = Q15_MAX;
+    q15_t output_amplitude_multipler_ = Q15_MAX;
 
     AdsrEnv startup_env_;
 
@@ -301,8 +346,26 @@ private:
         LFO_MOD,
         OUTPUT,
         RHYTHM,
-        MONO_INPUT,
-        SYNC_INPUT,
+        SETTINGS_MONO_INPUT,
+        SETTINGS_SYNC_INPUT,
+        SETTINGS_LFO_MOD,
+        SETTINGS_NORMAL_2,
+        SETTINGS_NORMAL_4,
+        SETTINGS_NORMAL_6,
+        SETTINGS_SHIFT_1,
+        SETTINGS_SHIFT_2,
+        SETTINGS_SHIFT_3,
+        SETTINGS_SHIFT_4,
+        SETTINGS_SHIFT_5,
+        SETTINGS_SHIFT_6,
+        SETTINGS_SHIFT_7,
+        SETTINGS_MODE_1,
+        SETTINGS_MODE_2,
+        SETTINGS_MODE_3,
+        SETTINGS_MODE_4,
+        SETTINGS_MODE_5,
+        SETTINGS_MODE_6,
+        SETTINGS_MODE_7,
         COUNT
     };
     EnumArray<Pot, std::unique_ptr<FancyPot>> pots_;
@@ -335,12 +398,24 @@ private:
     EnvelopeFollower input_envelope_follower_;
     size_t input_clipping_counter_ = 0;
 
+    // lfo mod destination change indication
+    static constexpr uint32_t kUiIndicateLfoModChangeTimeDark = s2alr(0.015f); // 15ms
+    static constexpr uint32_t kUiIndicateLfoModChangeTimeLight = s2alr(0.04f); // 40ms
+    uint32_t ui_lfo_mod_change_indication_counter_ = 0;
+    void IndicateLfoModDestChange();
+    void IncrementLfoModDestChangeCounter();
+    bool IsLfoModDestChangeActive();
+    uint32_t LfoModDestChangeColor();
+    bool cancel_midi_learn_tap_ = false;
+    EnumArray<LfoMod::Destination, bool> lfo_mod_selection_enabled_;
+    EnumArray<LfoMod::Destination, FancyPot *> lfo_mod_pots_{};
+
     // Settings stuff
     int32_t settings_pulse_ = 0;
     static constexpr int32_t kSettingsHysteresis = 40;
 
     // MIDI stuff
-    void MidiAdvancedSettings();
+    void MidiAdvancedSettings(bool cancel_learning = false, bool cancel_tapping = false);
     NumberFlasher midi_number_flasher_;
     uint32_t midi_channel_taps_ = 0;
     bool midi_channel_tapping_active = false;

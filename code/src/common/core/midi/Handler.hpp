@@ -128,6 +128,11 @@ public:
     bool StopLearning();
 
     /**
+     * @brief Stops listening for MIDI messages and forgets the received channel
+     */
+    void CancelLearning();
+
+    /**
      * @brief Loads the MIDI channel from the EEPROM
      */
     void LoadFromMemory();

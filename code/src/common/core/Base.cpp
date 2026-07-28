@@ -91,12 +91,71 @@ void Base::Init()
                                           .midi_cc = cc::TEMPO});
 
     // Settings
-    pots_[Pot::MONO_INPUT] = FancyPot::Create({.pot = Hardware::Pot::POT_1,
-                                               .layer = Hardware::Layer::SETTINGS,
-                                               .deadzone = true});
-    pots_[Pot::SYNC_INPUT] = FancyPot::Create({.pot = Hardware::Pot::POT_7,
-                                               .layer = Hardware::Layer::SETTINGS,
-                                               .deadzone = true});
+    pots_[Pot::SETTINGS_MONO_INPUT] = FancyPot::Create({.pot = Hardware::Pot::POT_1,
+                                                        .layer = Hardware::Layer::SETTINGS,
+                                                        .deadzone = true});
+    pots_[Pot::SETTINGS_SYNC_INPUT] = FancyPot::Create({.pot = Hardware::Pot::POT_7,
+                                                        .layer = Hardware::Layer::SETTINGS,
+                                                        .deadzone = true});
+    pots_[Pot::SETTINGS_LFO_MOD] = FancyPot::Create({.pot = Hardware::Pot::POT_3,
+                                                     .layer = Hardware::Layer::SETTINGS});
+    pots_[Pot::SETTINGS_NORMAL_2] = FancyPot::Create({.pot = Hardware::Pot::POT_2,
+                                                      .layer = Hardware::Layer::SETTINGS});
+    pots_[Pot::SETTINGS_NORMAL_4] = FancyPot::Create({.pot = Hardware::Pot::POT_4,
+                                                      .layer = Hardware::Layer::SETTINGS});
+    pots_[Pot::SETTINGS_NORMAL_6] = FancyPot::Create({.pot = Hardware::Pot::POT_6,
+                                                      .layer = Hardware::Layer::SETTINGS});
+    pots_[Pot::SETTINGS_SHIFT_1] = FancyPot::Create({.pot = Hardware::Pot::POT_1,
+                                                     .layer = Hardware::Layer::SETTINGS_SHIFT});
+    pots_[Pot::SETTINGS_SHIFT_2] = FancyPot::Create({.pot = Hardware::Pot::POT_2,
+                                                     .layer = Hardware::Layer::SETTINGS_SHIFT});
+    pots_[Pot::SETTINGS_SHIFT_3] = FancyPot::Create({.pot = Hardware::Pot::POT_3,
+                                                     .layer = Hardware::Layer::SETTINGS_SHIFT});
+    pots_[Pot::SETTINGS_SHIFT_4] = FancyPot::Create({.pot = Hardware::Pot::POT_4,
+                                                     .layer = Hardware::Layer::SETTINGS_SHIFT});
+    pots_[Pot::SETTINGS_SHIFT_5] = FancyPot::Create({.pot = Hardware::Pot::POT_5,
+                                                     .layer = Hardware::Layer::SETTINGS_SHIFT});
+    pots_[Pot::SETTINGS_SHIFT_6] = FancyPot::Create({.pot = Hardware::Pot::POT_6,
+                                                     .layer = Hardware::Layer::SETTINGS_SHIFT});
+    pots_[Pot::SETTINGS_SHIFT_7] = FancyPot::Create({.pot = Hardware::Pot::POT_7,
+                                                     .layer = Hardware::Layer::SETTINGS_SHIFT});
+    pots_[Pot::SETTINGS_MODE_1] = FancyPot::Create({.pot = Hardware::Pot::POT_1,
+                                                    .layer = Hardware::Layer::SETTINGS_MODE});
+    pots_[Pot::SETTINGS_MODE_2] = FancyPot::Create({.pot = Hardware::Pot::POT_2,
+                                                    .layer = Hardware::Layer::SETTINGS_MODE});
+    pots_[Pot::SETTINGS_MODE_3] = FancyPot::Create({.pot = Hardware::Pot::POT_3,
+                                                    .layer = Hardware::Layer::SETTINGS_MODE});
+    pots_[Pot::SETTINGS_MODE_4] = FancyPot::Create({.pot = Hardware::Pot::POT_4,
+                                                    .layer = Hardware::Layer::SETTINGS_MODE});
+    pots_[Pot::SETTINGS_MODE_5] = FancyPot::Create({.pot = Hardware::Pot::POT_5,
+                                                    .layer = Hardware::Layer::SETTINGS_MODE});
+    pots_[Pot::SETTINGS_MODE_6] = FancyPot::Create({.pot = Hardware::Pot::POT_6,
+                                                    .layer = Hardware::Layer::SETTINGS_MODE});
+    pots_[Pot::SETTINGS_MODE_7] = FancyPot::Create({.pot = Hardware::Pot::POT_7,
+                                                    .layer = Hardware::Layer::SETTINGS_MODE});
+
+    lfo_mod_pots_[LfoMod::Destination::DEFAULT] = nullptr;
+    lfo_mod_pots_[LfoMod::Destination::NORMAL_1] = pots_[Pot::SETTINGS_MONO_INPUT].get();
+    lfo_mod_pots_[LfoMod::Destination::NORMAL_2] = pots_[Pot::SETTINGS_NORMAL_2].get();
+    lfo_mod_pots_[LfoMod::Destination::NORMAL_3] = pots_[Pot::SETTINGS_LFO_MOD].get();
+    lfo_mod_pots_[LfoMod::Destination::NORMAL_4] = pots_[Pot::SETTINGS_NORMAL_4].get();
+    lfo_mod_pots_[LfoMod::Destination::NORMAL_5] = nullptr;
+    lfo_mod_pots_[LfoMod::Destination::NORMAL_6] = pots_[Pot::SETTINGS_NORMAL_6].get();
+    lfo_mod_pots_[LfoMod::Destination::NORMAL_7] = pots_[Pot::SETTINGS_SYNC_INPUT].get();
+    lfo_mod_pots_[LfoMod::Destination::SHIFT_1] = pots_[Pot::SETTINGS_SHIFT_1].get();
+    lfo_mod_pots_[LfoMod::Destination::SHIFT_2] = pots_[Pot::SETTINGS_SHIFT_2].get();
+    lfo_mod_pots_[LfoMod::Destination::SHIFT_3] = pots_[Pot::SETTINGS_SHIFT_3].get();
+    lfo_mod_pots_[LfoMod::Destination::SHIFT_4] = pots_[Pot::SETTINGS_SHIFT_4].get();
+    lfo_mod_pots_[LfoMod::Destination::SHIFT_5] = pots_[Pot::SETTINGS_SHIFT_5].get();
+    lfo_mod_pots_[LfoMod::Destination::SHIFT_6] = pots_[Pot::SETTINGS_SHIFT_6].get();
+    lfo_mod_pots_[LfoMod::Destination::SHIFT_7] = pots_[Pot::SETTINGS_SHIFT_7].get();
+    lfo_mod_pots_[LfoMod::Destination::MODE_1] = pots_[Pot::SETTINGS_MODE_1].get();
+    lfo_mod_pots_[LfoMod::Destination::MODE_2] = pots_[Pot::SETTINGS_MODE_2].get();
+    lfo_mod_pots_[LfoMod::Destination::MODE_3] = pots_[Pot::SETTINGS_MODE_3].get();
+    lfo_mod_pots_[LfoMod::Destination::MODE_4] = pots_[Pot::SETTINGS_MODE_4].get();
+    lfo_mod_pots_[LfoMod::Destination::MODE_5] = pots_[Pot::SETTINGS_MODE_5].get();
+    lfo_mod_pots_[LfoMod::Destination::MODE_6] = pots_[Pot::SETTINGS_MODE_6].get();
+    lfo_mod_pots_[LfoMod::Destination::MODE_7] = pots_[Pot::SETTINGS_MODE_7].get();
 
     // Init pots
     for (auto &pot : pots_)
@@ -164,6 +223,22 @@ void Base::Init()
 
     clock_.LoadFromMemory();
 
+    SetAllLfoModSelectionEnabled(false);                            // disable all secondary pot mappings
+    SetLfoModSelectionEnabled(true, LfoMod::Destination::NORMAL_3); // enable LFO frequency pot by default
+    lfo_mod_.SetDestination(LfoMod::Destination::DEFAULT);          // Default LFO modulation destination is LFO frequency
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        SetLfoModDefaultSelectionEnabled(); // enable all secondary pots + lfo mod by default
+        uint8_t lfo_mod_assignment_byte;
+        if (Kastle2::memory.Read8(Memory::ADDR_LFO_MOD_ASSIGNMENT, &lfo_mod_assignment_byte))
+        {
+            if (lfo_mod_assignment_byte < static_cast<uint8_t>(LfoMod::Destination::COUNT))
+            {
+                lfo_mod_.SetDestination(static_cast<LfoMod::Destination>(lfo_mod_assignment_byte));
+            }
+        }
+    }
+
     // Default sync stuff
     prev_reset_ = false;
     sync_thru_ = kBaseSyncThru;
@@ -212,6 +287,59 @@ void Base::SetAllFeaturesEnabled(bool enabled)
     }
 }
 
+void Base::SetLfoModSelectionEnabledSingle(bool enabled, LfoMod::Destination destination)
+{
+    if (destination < LfoMod::Destination::DEFAULT || destination >= LfoMod::Destination::COUNT)
+    {
+        return;
+    }
+
+    lfo_mod_selection_enabled_[destination] = enabled;
+
+    if (!enabled && lfo_mod_.GetDestination() == destination)
+    {
+        lfo_mod_.SetDestination(LfoMod::Destination::DEFAULT);
+    }
+}
+
+void Base::SetAllLfoModSelectionEnabled(bool enabled)
+{
+    lfo_mod_selection_enabled_.fill(enabled);
+
+    if (!enabled)
+    {
+        lfo_mod_.SetDestination(LfoMod::Destination::DEFAULT);
+    }
+}
+
+void Base::SetLfoModDefaultSelectionEnabled()
+{
+    lfo_mod_selection_enabled_ = {
+        true,  // DEFAULT
+        false, // NORMAL_1
+        false, // NORMAL_2
+        true,  // NORMAL_3
+        false, // NORMAL_4
+        false, // NORMAL_5
+        false, // NORMAL_6
+        false, // NORMAL_7
+        true,  // SHIFT_1
+        true,  // SHIFT_2
+        true,  // SHIFT_3
+        true,  // SHIFT_4
+        true,  // SHIFT_5
+        true,  // SHIFT_6
+        true,  // SHIFT_7
+        true,  // MODE_1
+        true,  // MODE_2
+        true,  // MODE_3
+        true,  // MODE_4
+        true,  // MODE_5
+        true,  // MODE_6
+        false  // MODE_7
+    };
+}
+
 // Ticking LFO and TEMPO in precise timings.
 FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
 {
@@ -234,6 +362,15 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
 
     // Do the input gain
     q15_scale_buffer(input, sw_input_gain_, kInputGainShiftLeft, 2 * size);
+
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        for (size_t i = 0; i < 2 * size; i++)
+        {
+            input[i] = q15_mult(input[i], input_amplitude_multipler_);
+            input[i] = q15_div(input[i], input_amplitude_divider_);
+        }
+    }
 
     // apply startup volume fade in to avoid clicks in buffer
     if (startup_env_state_ != StartupEnvState::FINISHED)
@@ -520,6 +657,15 @@ FASTCODE void Base::AfterAudioLoop(q15_t *input, q15_t *output, size_t size)
         }
     }
 
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        for (size_t i = 0; i < 2 * size; i++)
+        {
+            output[i] = q15_mult(output[i], output_amplitude_multipler_);
+            output[i] = q15_div(output[i], output_amplitude_divider_);
+        }
+    }
+
     // apply startup volume fade in (so the user can react to too high volume)
     // using the same envelope as for input fading
     if (startup_env_state_ == StartupEnvState::OUTPUT)
@@ -618,6 +764,39 @@ void Base::LayersHandling()
         {
             Kastle2::hw.ChangeLayer(Hardware::Layer::NORMAL);
         }
+        if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+        {
+            if (Kastle2::hw.JustPressed(Hardware::Button::SHIFT) && !Kastle2::hw.Pressed(Hardware::Button::MODE))
+            {
+                Kastle2::hw.ChangeLayer(Hardware::Layer::SETTINGS_SHIFT);
+            }
+            if (Kastle2::hw.JustPressed(Hardware::Button::MODE) && !Kastle2::hw.Pressed(Hardware::Button::SHIFT))
+            {
+                Kastle2::hw.ChangeLayer(Hardware::Layer::SETTINGS_MODE);
+            }
+        }
+        break;
+
+    case Hardware::Layer::SETTINGS_SHIFT:
+        if (settings_toggle)
+        {
+            Kastle2::hw.ChangeLayer(Hardware::Layer::NORMAL);
+        }
+        if (Kastle2::hw.JustReleased(Hardware::Button::SHIFT) || Kastle2::hw.JustReleased(Hardware::Button::MODE))
+        {
+            Kastle2::hw.ChangeLayer(Hardware::Layer::SETTINGS);
+        }
+        break;
+
+    case Hardware::Layer::SETTINGS_MODE:
+        if (settings_toggle)
+        {
+            Kastle2::hw.ChangeLayer(Hardware::Layer::NORMAL);
+        }
+        if (Kastle2::hw.JustReleased(Hardware::Button::SHIFT) || Kastle2::hw.JustReleased(Hardware::Button::MODE))
+        {
+            Kastle2::hw.ChangeLayer(Hardware::Layer::SETTINGS);
+        }
         break;
     }
 
@@ -648,6 +827,7 @@ void Base::BeforeUiLoop()
             midi_pots_[pot_type]->ReadValue();
         }
     }
+    lfo_mod_.UpdateValues(pots_[Pot::LFO_MOD]->GetValue(), Kastle2::hw.GetAnalogValue(Hardware::AnalogInput::PARAM_2));
 
     // Switch layers
     LayersHandling();
@@ -661,6 +841,27 @@ void Base::BeforeUiLoop()
         uint32_t input_pot = pots_[Pot::INPUT]->GetValue();
         Kastle2::codec.SetInputGain(input_pot >> 6); // hw gain
         sw_input_gain_ = pot_to_q15(input_pot);      // sw gain
+    }
+
+    // INPUT amplitude lfo modulation
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        int32_t value = lfo_mod_.GetModValue(pots_[Pot::INPUT].get());
+        if (value > 0)
+        {
+            input_amplitude_divider_ = map(value, 0, POT_MAX, Q15_MAX, q15(1.0f / 16.0f), MapClamp::TRUE);
+            input_amplitude_multipler_ = Q15_MAX;
+        }
+        else if (value < 0)
+        {
+            input_amplitude_divider_ = Q15_MAX;
+            input_amplitude_multipler_ = map(value, -POT_MAX, 0, Q15_ZERO, Q15_MAX, MapClamp::TRUE);
+        }
+        else
+        {
+            input_amplitude_divider_ = Q15_MAX;
+            input_amplitude_multipler_ = Q15_MAX;
+        }
     }
 
     // OUTPUT
@@ -682,6 +883,27 @@ void Base::BeforeUiLoop()
         Kastle2::codec.SetHpVolume(hp_volume); // hw
     }
 
+    // OUTPUT amplitude lfo modulation
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        int32_t value = lfo_mod_.GetModValue(pots_[Pot::OUTPUT].get());
+        if (value > 0)
+        {
+            output_amplitude_divider_ = map(value, 0, POT_MAX, Q15_MAX, q15(1.0f / 16.0f), MapClamp::TRUE);
+            output_amplitude_multipler_ = Q15_MAX;
+        }
+        else if (value < 0)
+        {
+            output_amplitude_divider_ = Q15_MAX;
+            output_amplitude_multipler_ = map(value, -POT_MAX, 0, Q15_ZERO, Q15_MAX, MapClamp::TRUE);
+        }
+        else
+        {
+            output_amplitude_divider_ = Q15_MAX;
+            output_amplitude_multipler_ = Q15_MAX;
+        }
+    }
+
     // Input envelope follower from ENV out by default
     if (IsFeatureEnabled(Feature::ENV_OUT))
     {
@@ -690,11 +912,10 @@ void Base::BeforeUiLoop()
     }
 
     // TEMPO
-    uint32_t tempo_pot = pots_[Pot::TEMPO]->GetValue();
+    uint32_t tempo_pot = lfo_mod_.AdjustWithMod(pots_[Pot::TEMPO].get(), pots_[Pot::TEMPO]->GetValue());
     clock_.SetPot(tempo_pot);
 
     // LFO
-    int32_t lfo_mod = pots_[Pot::LFO_MOD]->GetValue() - POT_HALF;
     int32_t lfo_pot = pots_[Pot::LFO]->GetValue();
 
     // Allowing a little bit of hysteresis
@@ -713,14 +934,11 @@ void Base::BeforeUiLoop()
         float freq = curve_map(lfo_pot, kBaseLfoMap);
 
         // Apply mod (proper 1V/Oct)
-        int32_t abs_lfo_mod_val = apply_pot_mod(Kastle2::hw.GetAnalogValue(Hardware::AnalogInput::PARAM_2), std::abs(lfo_mod) * 2);
-        if (abs_lfo_mod_val)
+        int32_t lfo_mod_val = lfo_mod_.GetModValue(pots_[Pot::LFO_MOD].get());
+        if (lfo_mod_val)
         {
-            if (lfo_mod < 0)
-            {
-                abs_lfo_mod_val *= -1;
-            }
-            freq = cv_to_freq_raw(freq, abs_lfo_mod_val);
+
+            freq = cv_to_freq_raw(freq, lfo_mod_val);
         }
 
         // update frequency
@@ -738,16 +956,17 @@ void Base::BeforeUiLoop()
         int32_t ratio = lfo_pot_ratio_;
 
         // Apply mod
-        int32_t abs_lfo_mod_val = apply_pot_mod(Kastle2::hw.GetAnalogValue(Hardware::AnalogInput::PARAM_2), std::abs(lfo_mod * 2));
-        if (abs_lfo_mod_val)
+        int32_t lfo_mod_val = lfo_mod_.GetModValue(pots_[Pot::LFO_MOD].get());
+        if (lfo_mod_val)
         {
-            abs_lfo_mod_val = map(abs_lfo_mod_val, 0, ADC_5V + 1, 0, kBaseLfoRatios.size());
-            if (lfo_mod < 0)
+            int32_t abs_lfo_mod_val = map(abs(lfo_mod_val), 0, ADC_5V + 1, 0, kBaseLfoRatios.size());
+            if (lfo_mod_val < 0)
             {
                 abs_lfo_mod_val *= -1;
             }
+            lfo_mod_val = abs_lfo_mod_val;
         }
-        ratio = constrain(ratio + abs_lfo_mod_val, 0, kBaseLfoRatios.size() - 1);
+        ratio = constrain(ratio + lfo_mod_val, 0, kBaseLfoRatios.size() - 1);
 
         // detect if the lfo is self patched
         if ((lfo_.GetSquareOut() > 0) != lfo_state_prev_)
@@ -791,11 +1010,13 @@ void Base::BeforeUiLoop()
         lfo_.SetRatio(kBaseLfoRatios[ratio]);
     }
 
-    // Generate triggers/rhytmhs
-    if (pots_[Pot::RHYTHM]->HasChanged())
+    // Generate triggers/rhythms
+    int32_t rhythm_modulation = lfo_mod_.GetModValue(pots_[Pot::RHYTHM].get());
+    if (pots_[Pot::RHYTHM]->HasChanged() || diff(rhythm_modulation, rhythm_modulation_prev_) > 10)
     {
+        rhythm_modulation_prev_ = rhythm_modulation;
         sequencer_.GenerateTriggersUsingTable(
-            pot_to_q15(pots_[Pot::RHYTHM]->GetValue()));
+            pot_to_q15(pots_[Pot::RHYTHM]->GetValue() + rhythm_modulation));
     }
 
     leds_should_be_off_ = shift_and_mode_pressed_count_ > 1000;
@@ -862,16 +1083,18 @@ void Base::BeforeUiLoop()
             }
             else
             {
-                // Showing LFO
+                // Showing LFO LED (only when the outputs are enabled)
+                if(IsFeatureEnabled(Feature::LFO_OUT)){
 
-                // Pick the color
-                uint32_t color = lfo_.IsSynced() ? kBaseColorLfoSynced : kBaseColorLfoFree;
+                    // Pick the color
+                    uint32_t color = lfo_.IsSynced() ? kBaseColorLfoSynced : kBaseColorLfoFree;
 
-                // We use the FakeBlinker class to solve the interferences
-                uint8_t brightness = fake_blinker_.GetLfoLedBrightness(lfo_);
+                    // We use the FakeBlinker class to solve the interferences
+                    uint8_t brightness = fake_blinker_.GetLfoLedBrightness(lfo_);
 
-                // Set the LED
-                Kastle2::hw.SetLed(Hardware::Led::LED_3, WS2812::ApplyBrightness(color, brightness));
+                    // Set the LED
+                    Kastle2::hw.SetLed(Hardware::Led::LED_3, WS2812::ApplyBrightness(color, brightness));
+                }
             }
             if (IsFeatureEnabled(Feature::INPUT_INDICATION))
             {
@@ -893,17 +1116,33 @@ void Base::BeforeUiLoop()
         input_clipping_counter_ = kClippingShowTicks;
     }
 
+    // Lfo Modulation destination change indication (visible across all settings modes)
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        IncrementLfoModDestChangeCounter();
+        if (lfo_mod_.DestinationChanged())
+        {
+            Kastle2::memory.Write8(Memory::ADDR_LFO_MOD_ASSIGNMENT, static_cast<unsigned int>(lfo_mod_.GetDestination()));
+        }
+    }
+
     // Settings layer stuff
     if (Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS)
     {
-        MidiAdvancedSettings();
+        MidiAdvancedSettings(cancel_midi_learn_tap_, cancel_midi_learn_tap_);
+
+        if (!Kastle2::hw.Pressed(Hardware::Button::SHIFT) && !Kastle2::hw.Pressed(Hardware::Button::MODE))
+        {
+            cancel_midi_learn_tap_ = false; // Reset the cancel flag set by lfo mod assigning
+                                            // (but only when both buttons are released)
+        }
 
         // Other settings
         Memory::MonoSetting prev_mono_setting = mono_setting_;
         Memory::SyncSetting prev_sync_setting = sync_setting_;
-        if (pots_[Pot::MONO_INPUT]->HasChanged())
+        if (pots_[Pot::SETTINGS_MONO_INPUT]->HasChanged())
         {
-            uint32_t mono_input_pot = pots_[Pot::MONO_INPUT]->GetValue();
+            uint32_t mono_input_pot = pots_[Pot::SETTINGS_MONO_INPUT]->GetValue();
             if (mono_input_pot < (POT_THIRD - kSettingsHysteresis))
             {
                 mono_setting_ = Memory::MonoSetting::LEFT;
@@ -917,9 +1156,9 @@ void Base::BeforeUiLoop()
                 mono_setting_ = Memory::MonoSetting::RIGHT;
             }
         }
-        if (pots_[Pot::SYNC_INPUT]->HasChanged())
+        if (pots_[Pot::SETTINGS_SYNC_INPUT]->HasChanged())
         {
-            uint32_t sync_input_pot = pots_[Pot::SYNC_INPUT]->GetValue();
+            uint32_t sync_input_pot = pots_[Pot::SETTINGS_SYNC_INPUT]->GetValue();
             if (sync_input_pot < (POT_THIRD - kSettingsHysteresis))
             {
                 sync_setting_ = Memory::SyncSetting::MIDI_DISABLED;
@@ -979,6 +1218,61 @@ void Base::BeforeUiLoop()
         Kastle2::hw.SetLed(Hardware::Led::LED_3, WS2812::ApplyBrightness(sync_color, brightness));
     }
 
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        // this is to make it flash even tho the destination hasn't changed (it feels better)
+        bool indicate_change = false;
+        // make the LEDs have a dimmed version of the color of the currently selected destination
+        int32_t lfo_mod_color = WS2812::ApplyBrightness(lfo_mod_.GetTarget().color, 0x20);
+
+        if (Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_SHIFT ||
+            Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_MODE)
+        {
+            Kastle2::hw.SetLed(Hardware::Led::LED_1, lfo_mod_color);
+            Kastle2::hw.SetLed(Hardware::Led::LED_2, lfo_mod_color);
+            Kastle2::hw.SetLed(Hardware::Led::LED_3, lfo_mod_color);
+
+            MidiAdvancedSettings(cancel_midi_learn_tap_, cancel_midi_learn_tap_);
+        }
+
+        bool cancel_midi_learn_tap = false;
+        for (auto destination : EnumRange<LfoMod::Destination>())
+        {
+            FancyPot *destination_pot = lfo_mod_pots_[destination];
+            if (destination_pot == nullptr)
+            {
+                continue;
+            }
+
+            if (!destination_pot->HasMoved(FancyPot::Move::MOVE))
+            {
+                continue;
+            }
+
+            if (!lfo_mod_selection_enabled_[destination])
+            {
+                if (Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_MODE)
+                {
+                    cancel_midi_learn_tap = true;
+                }
+                continue;
+            }
+
+            lfo_mod_.SetDestination(destination);
+            indicate_change = true;
+        }
+
+        if (indicate_change)
+        {
+            IndicateLfoModDestChange();
+            cancel_midi_learn_tap_ = true;
+        }
+        else if (cancel_midi_learn_tap)
+        {
+            cancel_midi_learn_tap_ = true;
+        }
+    }
+
     // Memory clear (Factory reset)
     if (shift_and_mode_pressed_count_ > kBaseTicksClearMemory)
     {
@@ -1021,7 +1315,9 @@ void Base::AfterUiLoop()
     }
 
     // Show the MIDI learn LED
-    if (Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS)
+    if (Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS ||
+        Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_SHIFT ||
+        Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_MODE)
     {
         // Learn LED
         switch (Kastle2::midi.GetLearnState())
@@ -1049,59 +1345,88 @@ void Base::AfterUiLoop()
             Kastle2::hw.SetLed(Hardware::Led::LED_1, WS2812::RED);
         }
     }
+
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        if (Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS ||
+            Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_SHIFT ||
+            Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_MODE)
+        {
+            if (IsLfoModDestChangeActive())
+            {
+                int32_t color = LfoModDestChangeColor();
+                Kastle2::hw.SetLed(Hardware::Led::LED_1, color);
+                Kastle2::hw.SetLed(Hardware::Led::LED_2, color);
+                Kastle2::hw.SetLed(Hardware::Led::LED_3, color);
+            }
+        }
+    }
 }
 
-void Base::MidiAdvancedSettings()
+void Base::MidiAdvancedSettings(bool cancel_learning, bool cancel_tapping)
 {
     // MIDI LEARN
 
-    // Mode must be released at the start
-    if (!Kastle2::hw.Pressed(Hardware::Button::MODE))
+    if (cancel_learning)
     {
-        midi_learn_start_allowed_ = true;
+        Kastle2::midi.CancelLearning();
     }
-
-    // Hold at least 1 second to start MIDI learn
-    if (!Kastle2::hw.Pressed(Hardware::Button::SHIFT) && Kastle2::hw.PressedMillis(Hardware::Button::MODE) > 1000 && midi_learn_start_allowed_)
+    else
     {
-        // Start MIDI learn
-        Kastle2::midi.StartLearning();
-    }
-    if (Kastle2::hw.JustReleased(Hardware::Button::MODE))
-    {
-        // Stop MIDI learn
-        if (Kastle2::midi.StopLearning())
+        // Mode must be released at the start
+        if (!Kastle2::hw.Pressed(Hardware::Button::MODE))
         {
-            midi_number_flasher_.FlashNumber(Kastle2::midi.GetChannel() + 1);
+            midi_learn_start_allowed_ = true;
+        }
+
+        // Hold at least 1 second to start MIDI learn
+        if (!Kastle2::hw.Pressed(Hardware::Button::SHIFT) && Kastle2::hw.PressedMillis(Hardware::Button::MODE) > 1000 && midi_learn_start_allowed_)
+        {
+            // Start MIDI learn
+            Kastle2::midi.StartLearning();
+        }
+        if (Kastle2::hw.JustReleased(Hardware::Button::MODE))
+        {
+            // Stop MIDI learn
+            if (Kastle2::midi.StopLearning())
+            {
+                midi_number_flasher_.FlashNumber(Kastle2::midi.GetChannel() + 1);
+            }
         }
     }
 
     // MIDI TAP CHANNEL
-
-    if (Kastle2::hw.JustPressed(Hardware::Button::SHIFT))
+    if (cancel_tapping)
     {
-        midi_channel_taps_ = 0;
-        midi_channel_tapping_active = true;
+        midi_channel_tapping_active = false;
     }
-    if (Kastle2::hw.Pressed(Hardware::Button::SHIFT) && Kastle2::hw.JustReleased(Hardware::Button::MODE))
+    else
     {
-        if (midi_channel_tapping_active && midi_channel_taps_ < 16)
+        if (Kastle2::hw.JustPressed(Hardware::Button::SHIFT))
         {
-            midi_channel_taps_++;
+            midi_channel_taps_ = 0;
+            midi_channel_tapping_active = true;
         }
-    }
-    if (Kastle2::hw.JustReleased(Hardware::Button::SHIFT))
-    {
-        if (midi_channel_tapping_active)
+        if (Kastle2::hw.Pressed(Hardware::Button::SHIFT) && Kastle2::hw.JustReleased(Hardware::Button::MODE))
         {
-            midi_channel_tapping_active = false;
-            // Save the MIDI tap channel
-            if (midi_channel_taps_ > 0)
+            if (midi_channel_tapping_active && midi_channel_taps_ < 16)
             {
-                // -1 because MIDI channels are 0-15, but we tap 1-16
-                if (Kastle2::midi.SetChannel(midi_channel_taps_ - 1))
+                midi_channel_taps_++;
+            }
+        }
+        if (Kastle2::hw.JustReleased(Hardware::Button::SHIFT))
+        {
+            if (midi_channel_tapping_active)
+            {
+                midi_channel_tapping_active = false;
+                // Save the MIDI tap channel
+                if (midi_channel_taps_ > 0)
                 {
-                    midi_number_flasher_.FlashNumber(Kastle2::midi.GetChannel() + 1);
+                    // -1 because MIDI channels are 0-15, but we tap 1-16
+                    if (Kastle2::midi.SetChannel(midi_channel_taps_ - 1))
+                    {
+                        midi_number_flasher_.FlashNumber(Kastle2::midi.GetChannel() + 1);
+                    }
                 }
             }
         }
@@ -1165,4 +1490,33 @@ Sequencer &Base::GetSequencer()
 Lfo &Base::GetLfo()
 {
     return lfo_;
+}
+
+void Base::IndicateLfoModDestChange()
+{
+    ui_lfo_mod_change_indication_counter_ = 0;
+}
+
+void Base::IncrementLfoModDestChangeCounter()
+{
+    if (ui_lfo_mod_change_indication_counter_ < SIZE_MAX)
+    {
+        ui_lfo_mod_change_indication_counter_++;
+    }
+}
+
+bool Base::IsLfoModDestChangeActive()
+{
+    return ui_lfo_mod_change_indication_counter_ < kUiIndicateLfoModChangeTimeDark * 2 + kUiIndicateLfoModChangeTimeLight;
+}
+
+uint32_t Base::LfoModDestChangeColor()
+{
+
+    if (ui_lfo_mod_change_indication_counter_ > kUiIndicateLfoModChangeTimeDark &&
+        ui_lfo_mod_change_indication_counter_ < kUiIndicateLfoModChangeTimeLight + kUiIndicateLfoModChangeTimeDark)
+    {
+        return lfo_mod_.GetTarget().color;
+    }
+    return WS2812::BLACK;
 }

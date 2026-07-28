@@ -170,6 +170,11 @@ bool Handler::StopLearning()
     return false; // Learning was not successful, no channel learned
 }
 
+void Handler::CancelLearning()
+{
+    learning_ = false;
+}
+
 void Handler::LoadFromMemory()
 {
     uint8_t read_value;

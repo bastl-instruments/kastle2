@@ -161,6 +161,29 @@
             ]
         },
         {
+            "label": "clean_and_generate_dev_builds",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "clean",
+                "build_all",
+                "generate_dev_builds"
+            ]
+        },
+        {
+            "label": "generate_dev_builds",
+            "type": "shell",
+            "command": "stamp=$(date +%Y%m%d-%H%M%S) && shopt -s nullglob && for file in kastle2-*.elf kastle2-*.hex kastle2-*.uf2; do [[ \"$file\" == *-dev-build-* ]] && continue; base=${file%.*}; ext=${file##*.}; cp \"$file\" \"${base}-dev-build-${stamp}.${ext}\"; done",
+            "options": {
+                "cwd": "${workspaceRoot}/code/build/output",
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": [
+                        "-c"
+                    ]
+                }
+            }
+        },
+        {
             "label": "make_docs",
             "type": "process",
             "command": "doxygen",
