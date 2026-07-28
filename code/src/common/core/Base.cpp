@@ -344,7 +344,7 @@ void Base::SetLfoModDefaultSelectionEnabled()
         true,  // MODE_4
         true,  // MODE_5
         true,  // MODE_6
-        false  // MODE_7
+        true   // MODE_7
     };
 }
 
@@ -1043,9 +1043,13 @@ void Base::BeforeUiLoop()
             pot_to_q15(pots_[Pot::RHYTHM]->GetValue() + rhythm_modulation));
     }
 
-    if (pots_[Pot::SWING]->HasChanged())
+    int32_t swing_modulation = lfo_mod_.GetModValue(pots_[Pot::SWING].get());
+    if (pots_[Pot::SWING]->HasChanged() || diff(swing_modulation, swing_modulation_prev_) > 10)
     {
-        sequencer_.SetSwing(static_cast<float>(pots_[Pot::SWING]->GetValue()) / static_cast<float>(POT_MAX));
+        swing_modulation_prev_ = swing_modulation;
+        int32_t swing_value = pots_[Pot::SWING]->GetValue() + swing_modulation;
+        swing_value = constrain(swing_value, 0, POT_MAX);
+        sequencer_.SetSwing(static_cast<float>(swing_value) / static_cast<float>(POT_MAX));
     }
 
     leds_should_be_off_ = shift_and_mode_pressed_count_ > 1000;

@@ -365,6 +365,7 @@ private:
     bool swing_step_pending_ = false;
 
     int32_t rhythm_modulation_prev_ = 0;
+    int32_t swing_modulation_prev_ = 0;
 
     // Volumes
     q15_t sw_input_gain_ = 0;
