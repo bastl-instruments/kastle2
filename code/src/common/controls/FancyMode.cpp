@@ -39,7 +39,7 @@ void FancyMode::Init(uint32_t modes_count)
 {
     attenuator_ = FancyPot::Create({
         .pot = config_.attenuator_pot,         ///< Center pot
-        .layer = Hardware::Layer::MODE,        ///< When holding MODE button
+        .layer = config_.attenuator_layer,     ///< When holding MODE button
         .initial_value = POT_MAX,              ///< No attenuation by default
         .midi_cc = config_.midi_attenuator_cc, ///< MIDI CC for attenuator control
     });
@@ -217,7 +217,8 @@ void FancyMode::TriggerAdcRead()
     {
         return;
     }
-    adc_input_value_ = apply_pot_mod(Kastle2::hw.GetAnalogValue(config_.adc_input), attenuator_->GetValue());
+    adc_input_value_ = apply_pot_mod(Kastle2::hw.GetAnalogValue(config_.adc_input),
+                                     Kastle2::base.GetLfoMod().AdjustWithMod(attenuator_.get(), attenuator_->GetValue()));
 }
 
 void FancyMode::TriggerMidiRead()

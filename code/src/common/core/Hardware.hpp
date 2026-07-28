@@ -210,6 +210,8 @@ public:
         SHIFT,    ///< Shift button pressed
         MODE,     ///< Mode (Bank) button pressed
         SETTINGS, ///< When both Shift and Mode are held for a while
+        SETTINGS_SHIFT, ///< When in settings and Shift is held
+        SETTINGS_MODE,  ///< When in settings and Mode is held
         COUNT
     };
 
@@ -614,6 +616,15 @@ public:
             return custom_calibrations_;
         }
         return reference_calibrations_[version_];
+    }
+
+    /**
+     * @brief Returns maximum CV value for sample selection based on hardware version.
+     * @return ADC_4V for KASTLE2 (to reach last sample on AA batteries), ADC_5V for others (=CITADEL).
+     */
+    inline int32_t GetSafeCvMaxValue() const
+    {
+        return (GetVersion() == Hardware::Version::KASTLE2 ? ADC_4V : ADC_5V);
     }
 
     /**

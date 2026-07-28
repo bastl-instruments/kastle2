@@ -64,6 +64,10 @@ void AppFxWizard::Init()
     // Disable audio chain, since we process the audio ourselves
     Kastle2::base.SetFeatureEnabled(Base::Feature::AUDIO_CHAIN, false);
 
+    // Configure lfo mod destinations
+    Kastle2::base.SetLfoModDefaultSelectionEnabled();
+    Kastle2::base.SetLfoModSelectionEnabled(false, LfoMod::Destination::MODE_1, LfoMod::Destination::MODE_2, LfoMod::Destination::MODE_3, LfoMod::Destination::MODE_5, LfoMod::Destination::MODE_6);
+
     // Fake Tempo and LFO LEDs
     Kastle2::base.GetFakeBlinker().SetEnabled(true);
     // If under 30 cycles
@@ -290,13 +294,6 @@ void AppFxWizard::Init()
          .initial_value = POT_HALF,
          .midi_cc = cc::FILTER,
          .deadzone = true});
-
-    // Mode layer
-    pots_[Pot::MODE_MOD] = FancyPot::Create(
-        {.pot = Hardware::Pot::POT_4,
-         .layer = Hardware::Layer::MODE,
-         .initial_value = POT_MAX,
-         .midi_cc = cc::MODE_MOD});
 
     // Init pots
     for (auto &pot : pots_)
@@ -611,17 +608,18 @@ void AppFxWizard::UiLoop()
     feedback_delay_left_->SetDelay(feedback_delay_);
     feedback_delay_right_->SetDelay(feedback_delay_);
 
-    int32_t filter = pots_[Pot::FILTER]->GetValue();
+    int32_t filter = Kastle2::base.GetLfoMod().AdjustedPotValue(pots_[Pot::FILTER].get());
     int32_t filter_crossfade = curve_map(filter, kMapDjFilter);
     dj_filter_left_.SetCrossfade(filter_crossfade);
     dj_filter_right_.SetCrossfade(filter_crossfade);
 
     int32_t dry_wet = pots_[Pot::AMOUNT]->GetValue();
-    dry_wet += apply_pot_mod_attenuvert(Kastle2::hw.GetAnalogValue(CV_DRYWET), pots_[Pot::AMOUNT_MOD]->GetValue());
+    dry_wet += apply_pot_mod_attenuvert(Kastle2::hw.GetAnalogValue(CV_DRYWET),
+                                        Kastle2::base.GetLfoMod().AdjustedPotValue(pots_[Pot::AMOUNT_MOD].get()));
     dry_wet = constrain(dry_wet, POT_MIN, POT_MAX);
 
     int32_t time = pots_[Pot::TIME]->GetValue();
-    int32_t stereo = pots_[Pot::STEREO]->GetValue();
+    int32_t stereo = Kastle2::base.GetLfoMod().AdjustedPotValue(pots_[Pot::STEREO].get());
     int32_t time_mod = pots_[Pot::TIME_MOD]->GetValue();
     time += apply_pot_mod_attenuvert(Kastle2::hw.GetAnalogValue(CV_FREE), time_mod);
     time += apply_pot_mod_attenuvert(cv_step_, time_mod);

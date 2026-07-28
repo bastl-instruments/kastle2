@@ -206,7 +206,6 @@ private:
         TIME,
         TIME_MOD,
         FILTER,
-        MODE_MOD,
         COUNT
     };
     EnumArray<Pot, std::unique_ptr<FancyPot>> pots_;

@@ -177,4 +177,28 @@ inline constexpr q31_t fq31(const float x)
     return freq_to_q31(x, SAMPLE_RATE);
 }
 
+/**
+ * @brief Converts MIDI velocity (0-127) to q31_t (0-2147483647).
+ * @param velocity The MIDI velocity (0-127)
+ * @return The q31_t representation of the velocity (0-1)
+ */
+inline constexpr q31_t midi_velocity_to_q31(const uint8_t velocity)
+{
+    q31_t velocity_q31 = constrain(velocity, 0, 127) << 24; // maps 127 to 0x7F000000
+    velocity_q31 |= velocity_q31 >> 7;                      // spreads bits to reach full scale
+    return velocity_q31;
+}
+
+/**
+ * @brief Converts MIDI velocity (0-127) to q15_t (0-32767).
+ * @param velocity The MIDI velocity (0-127)
+ * @return The q15_t representation of the velocity (0-1)
+ */
+inline constexpr q15_t midi_velocity_to_q15(const uint8_t velocity)
+{
+    q15_t velocity_q15 = constrain(velocity, 0, 127) << 8; // maps 127 to 0x7F00
+    velocity_q15 |= velocity_q15 >> 7;                     // spreads bits to reach full scale
+    return velocity_q15;
+}
+
 }

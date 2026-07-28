@@ -399,35 +399,79 @@ constexpr auto map(T value, U inMin, V inMax, W outMin, X outMax, MapClamp clamp
                                                                    int64_t,
                                                                    uint64_t>>;
 
-            result = static_cast<ResultType>(
-                (static_cast<SafeType>(vValue - vInMin) * static_cast<SafeType>(vOutMax - vOutMin)) /
+            SafeType safe_result = (static_cast<SafeType>(vValue - vInMin) * static_cast<SafeType>(vOutMax - vOutMin)) /
                     static_cast<SafeType>(vInMax - vInMin) +
-                static_cast<SafeType>(vOutMin));
+                static_cast<SafeType>(vOutMin);
+
+            // Clamp to valid range for ResultType BEFORE casting
+            SafeType minOut = vOutMin < vOutMax ? vOutMin : vOutMax;
+            SafeType maxOut = vOutMin < vOutMax ? vOutMax : vOutMin;
+            
+            if (clamp == MapClamp::TRUE)
+            {
+                if (safe_result < minOut)
+                {
+                    safe_result = minOut;
+                }
+                else if (safe_result > maxOut)
+                {
+                    safe_result = maxOut;
+                }
+            }
+            
+            // Clamp to ResultType range to prevent signed overflow during cast
+            SafeType result_min = static_cast<SafeType>(std::numeric_limits<ResultType>::min());
+            SafeType result_max = static_cast<SafeType>(std::numeric_limits<ResultType>::max());
+            if (safe_result < result_min)
+            {
+                safe_result = result_min;
+            }
+            else if (safe_result > result_max)
+            {
+                safe_result = result_max;
+            }
+            
+            result = static_cast<ResultType>(safe_result);
         }
         else
         {
             // Standard integer calculation
             result = (vValue - vInMin) * (vOutMax - vOutMin) / (vInMax - vInMin) + vOutMin;
+            
+            // Apply clamping if requested
+            if (clamp == MapClamp::TRUE)
+            {
+                ResultType minOut = vOutMin < vOutMax ? vOutMin : vOutMax;
+                ResultType maxOut = vOutMin < vOutMax ? vOutMax : vOutMin;
+                if (result < minOut)
+                {
+                    result = minOut;
+                }
+                else if (result > maxOut)
+                {
+                    result = maxOut;
+                }
+            }
         }
     }
     else
     {
         // For floating point, just do the standard calculation
         result = (vValue - vInMin) * (vOutMax - vOutMin) / (vInMax - vInMin) + vOutMin;
-    }
-
-    // Apply clamping if requested
-    if (clamp == MapClamp::TRUE)
-    {
-        ResultType minOut = vOutMin < vOutMax ? vOutMin : vOutMax;
-        ResultType maxOut = vOutMin < vOutMax ? vOutMax : vOutMin;
-        if (result < minOut)
+        
+        // Apply clamping if requested
+        if (clamp == MapClamp::TRUE)
         {
-            result = minOut;
-        }
-        else if (result > maxOut)
-        {
-            result = maxOut;
+            ResultType minOut = vOutMin < vOutMax ? vOutMin : vOutMax;
+            ResultType maxOut = vOutMin < vOutMax ? vOutMax : vOutMin;
+            if (result < minOut)
+            {
+                result = minOut;
+            }
+            else if (result > maxOut)
+            {
+                result = maxOut;
+            }
         }
     }
 

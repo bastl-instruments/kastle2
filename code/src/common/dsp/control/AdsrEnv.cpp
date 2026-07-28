@@ -36,6 +36,7 @@ void AdsrEnv::Init(float sample_rate)
 {
     Reset();
     hold_value_ = 0;
+    hold_gate_ = false;
     sample_rate_ = sample_rate;
     looping_ = false;
     decay_freeze_ = false;
@@ -65,14 +66,33 @@ void AdsrEnv::Reset()
     state_ = State::IDLE;
     output_ = 0;
     hold_count_ = 0;
+    hold_gate_ = false;
     next_trigger_ = false;
+}
+
+void AdsrEnv::SetHold(bool hold)
+{
+    if (hold_gate_ == hold)
+    {
+        return;
+    }
+
+    hold_gate_ = hold;
+
+    if (!hold_gate_ && state_ == State::HOLD && hold_value_ == 0)
+    {
+        if (looping_)
+            state_ = State::RELEASE;
+        else
+            state_ = State::DECAY;
+    }
 }
 
 void AdsrEnv::SetAttackTime(float time)
 {
     float rate = time * sample_rate_;
     float attack_coef = CalcCoef(rate, target_ratioA_log_);
-    float attack_base = (1.0 + target_ratioA_) * (1.0 - attack_coef);
+    float attack_base = (1.0f + target_ratioA_) * (1.0f - attack_coef);
     attack_coef_ = float_to_q31(attack_coef);
     attack_base_ = float_to_q31(attack_base);
 }
@@ -81,7 +101,7 @@ void AdsrEnv::SetDecayTime(float time)
 {
     float rate = time * sample_rate_;
     float decay_coef = CalcCoef(rate, target_ratioDR_log_);
-    float decay_base = (sustain_level_ - target_ratioDR_) * (1.0 - decay_coef);
+    float decay_base = (sustain_level_ - target_ratioDR_) * (1.0f - decay_coef);
     decay_coef_ = float_to_q31(decay_coef);
     decay_base_ = float_to_q31(decay_base);
 }
@@ -90,14 +110,14 @@ void AdsrEnv::SetReleaseTime(float time)
 {
     float rate = time * sample_rate_;
     float release_coef = CalcCoef(rate, target_ratioDR_log_);
-    float release_base = -target_ratioDR_ * (1.0 - release_coef);
+    float release_base = -target_ratioDR_ * (1.0f - release_coef);
     release_coef_ = float_to_q31(release_coef);
     release_base_ = float_to_q31(release_base);
 }
 
 float AdsrEnv::CalcCoef(float rate, float targetRatioLog)
 {
-    return exp(targetRatioLog / rate);
+    return expf(targetRatioLog / rate);
 }
 
 void AdsrEnv::SetNonResetting(NonResetting option)
@@ -124,7 +144,7 @@ void AdsrEnv::SetDecayFreezeRiseTime(float time)
 {
     float rate = time * sample_rate_;
     float decay_freeze_coef = CalcCoef(rate, target_ratioA_log_);
-    float decay_freeze_base = (1.0 + target_ratioA_) * (1.0 - decay_freeze_coef);
+    float decay_freeze_base = (1.0f + target_ratioA_) * (1.0f - decay_freeze_coef);
     decay_freeze_coef_ = float_to_q31(decay_freeze_coef);
     decay_freeze_base_ = float_to_q31(decay_freeze_base);
 }
@@ -136,18 +156,18 @@ void AdsrEnv::SetSustainLevel(q31_t level)
 
 void AdsrEnv::SetTargetRatioA(float targetRatio)
 {
-    if (targetRatio < 0.000000001)
-        targetRatio = 0.000000001; // -180 dB
+    if (targetRatio < 0.000000001f)
+        targetRatio = 0.000000001f; // -180 dB
     target_ratioA_ = targetRatio;
-    target_ratioA_log_ = -log((1.0 + target_ratioA_) / target_ratioA_);
+    target_ratioA_log_ = -logf((1.0f + target_ratioA_) / target_ratioA_);
 }
 
 void AdsrEnv::SetTargetRatioDR(float targetRatio)
 {
-    if (targetRatio < 0.000000001)
-        targetRatio = 0.000000001; // -180 dB
+    if (targetRatio < 0.000000001f)
+        targetRatio = 0.000000001f; // -180 dB
     target_ratioDR_ = targetRatio;
-    target_ratioDR_log_ = -log((1.0 + target_ratioDR_) / target_ratioDR_);
+    target_ratioDR_log_ = -logf((1.0f + target_ratioDR_) / target_ratioDR_);
 }
 
 FASTCODE q31_t AdsrEnv::Process()
@@ -166,14 +186,17 @@ FASTCODE q31_t AdsrEnv::Process()
     switch (state_)
     {
     case State::HOLD:
-        hold_count_++;
-        if (hold_count_ >= hold_value_)
+        if (!hold_gate_)
         {
-            hold_count_ = 0;
-            if (looping_)
-                state_ = State::RELEASE;
-            else
-                state_ = State::DECAY;
+            hold_count_++;
+            if (hold_count_ >= hold_value_)
+            {
+                hold_count_ = 0;
+                if (looping_)
+                    state_ = State::RELEASE;
+                else
+                    state_ = State::DECAY;
+            }
         }
         break;
     case State::IDLE:
@@ -187,7 +210,7 @@ FASTCODE q31_t AdsrEnv::Process()
 
         if (output_ == Q31_MAX)
         {
-            if (hold_value_ > 0)
+            if (hold_gate_ || hold_value_ > 0)
             {
                 state_ = State::HOLD;
                 hold_count_ = 0;

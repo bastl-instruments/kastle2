@@ -109,8 +109,16 @@ public:
      */
     void SetHoldTime(float time)
     {
-        hold_value_ = time * sample_rate_;
+        hold_value_ = static_cast<size_t>(time * sample_rate_);
     };
+
+    /**
+     * @brief Hold the envelope at full level while enabled
+     * @param hold Whether hold is active
+     * @details This is a gate-like hold that keeps the envelope in HOLD after attack.
+     *          Disabling it resumes timed hold (if configured) or decay.
+     */
+    void SetHold(bool hold);
 
     /**
      * @brief Set the decay time in seconds
@@ -191,7 +199,7 @@ public:
      * @brief Reset the envelope to idle state and zero output
      */
     FASTCODE void Reset();
-    
+
     /**
      * @brief Returns the current envelope value
      * @return Current envelope value between 0-Q31_MAX
@@ -216,8 +224,9 @@ protected:
     float sample_rate_ = 0.0f;
     bool looping_ = false;
     State state_ = State::IDLE;
-    long hold_count_ = 0;
-    long hold_value_ = 0;
+    size_t hold_count_ = 0;
+    size_t hold_value_ = 0;
+    bool hold_gate_ = false;
 
     // Curve settings
     float target_ratioA_ = 0.0f;

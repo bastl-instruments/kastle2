@@ -83,8 +83,9 @@ public:
         uint8_t midi_attenuator_cc = NO_MIDI;                          ///< MIDI CC for attenuator control, 0xFF = no MIDI (default)
         uint8_t midi_output_cc = NO_MIDI;                              ///< Outputs the value mapped to 0-127
         FancyPot::MidiNoteControl midi_note_control = {};              ///< MIDI note control
-        Hardware::AnalogInput adc_input = Hardware::AnalogInput::MODE; ///< ADC input to read the mode from
         Hardware::Pot attenuator_pot = Hardware::Pot::POT_4;           ///< Potentiometer to use as an attenuator for the mode input
+        Hardware::AnalogInput adc_input = Hardware::AnalogInput::MODE; ///< ADC input to read the mode from
+        Hardware::Layer attenuator_layer = Hardware::Layer::MODE;      ///< Layer to use for the attenuator pot
         InputReading input_reading = InputReading::CONTINUOUS;         ///< How to read the cv mode input
         InputReading midi_input_reading = InputReading::CONTINUOUS;    ///< How to read the midi mode input
     };

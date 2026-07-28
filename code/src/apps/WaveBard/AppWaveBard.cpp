@@ -75,6 +75,10 @@ void AppWaveBard::Init()
     Kastle2::base.SetFeatureEnabled(Base::Feature::ENV_OUT, false);
     Kastle2::base.SetFeatureEnabled(Base::Feature::INPUT_INDICATION_CLIP, false);
 
+    // Configure lfo mod mapping
+    Kastle2::base.SetLfoModDefaultSelectionEnabled();
+    Kastle2::base.SetLfoModSelectionEnabled(false, LfoMod::Destination::MODE_6);
+
     // Tiny bit max higher volume to match FX Wizard
     Kastle2::base.SetMaxVolume(54);
 
@@ -175,10 +179,6 @@ void AppWaveBard::Init()
                                                .midi_cc = cc::FINE,
                                                .deadzone = true,
                                                .memory_addr = kMemPotFine});
-    pots_[Pot::BANK_MOD] = FancyPot::Create({.pot = Hardware::Pot::POT_4,
-                                             .layer = Hardware::Layer::MODE,
-                                             .initial_value = POT_MAX,
-                                             .midi_cc = cc::BANK_MOD});
     pots_[Pot::PITCH_QUANTIZED] = FancyPot::Create({.pot = Hardware::Pot::POT_5,
                                                     .layer = Hardware::Layer::MODE});
 
@@ -493,7 +493,6 @@ FASTCODE void AppWaveBard::SecondCoreProcess(size_t index)
     left = q15_mult(left, fx_volume_compensation_);
     right = q15_mult(right, fx_volume_compensation_);
 
-
     // Apply DJ filter
     filter_.Process(left, right);
 #ifdef FILTER_VOLUME_COMPENSATION
@@ -650,6 +649,13 @@ void AppWaveBard::UiLoop()
         }
     }
 
+    // LFO Mod (remappable to other destinations)
+    const auto &lfo_mod = Kastle2::base.GetLfoMod();
+    static constexpr int32_t kLfoModChangeThreshold = POT_MAX / 20;
+    static constexpr auto LFO_MOD_SCALE = LfoMod::Destination::MODE_1;
+    static constexpr auto LFO_MOD_ROOT = LfoMod::Destination::MODE_2;
+    static constexpr auto LFO_MOD_OCTAVE = LfoMod::Destination::MODE_5;
+
     // Change from midi to patch pitch source?
     bool change_to_patch_source = false;
 
@@ -662,14 +668,18 @@ void AppWaveBard::UiLoop()
         UpdateQuantizedPot();
     }
     // octave knob
-    if (pots_[Pot::PITCH_QUANTIZED]->HasChanged())
+    if (pots_[Pot::PITCH_QUANTIZED]->HasChanged() ||
+        diff(lfo_mod_octave_prev_, lfo_mod.GetModValue(LFO_MOD_OCTAVE)) > kLfoModChangeThreshold)
     {
+        lfo_mod_octave_prev_ = lfo_mod.GetModValue(LFO_MOD_OCTAVE);
         change_to_patch_source = true;
         quantization_enabled_ = true;
     }
     // scale knob
-    if (pots_[Pot::PITCH_SCALE]->HasChanged())
+    if (pots_[Pot::PITCH_SCALE]->HasChanged() ||
+        diff(lfo_mod_scale_prev_, lfo_mod.GetModValue(LFO_MOD_SCALE)) > kLfoModChangeThreshold)
     {
+        lfo_mod_scale_prev_ = lfo_mod.GetModValue(LFO_MOD_SCALE);
         change_to_patch_source = true;
         if (!quantization_enabled_)
         {
@@ -678,8 +688,10 @@ void AppWaveBard::UiLoop()
         }
     }
     // root knob
-    if (pots_[Pot::PITCH_ROOT]->HasChanged())
+    if (pots_[Pot::PITCH_ROOT]->HasChanged() ||
+        diff(lfo_mod_root_prev_, lfo_mod.GetModValue(LFO_MOD_ROOT)) > kLfoModChangeThreshold)
     {
+        lfo_mod_root_prev_ = lfo_mod.GetModValue(LFO_MOD_ROOT);
         change_to_patch_source = true;
         if (!quantization_enabled_)
         {
@@ -711,6 +723,8 @@ void AppWaveBard::UiLoop()
 
     // Quantizer Scale selection
     int32_t quantizer_scale = pots_[Pot::PITCH_SCALE]->GetMappedValue();
+    quantizer_scale += map(lfo_mod.GetModValue(LFO_MOD_SCALE), -POT_MAX, POT_MAX, -samples_.num_scales + 1, samples_.num_scales - 1);
+    quantizer_scale = constrain(quantizer_scale, 0, samples_.num_scales - 1);
     quantizer_.SetScale(quantizer_scale >= 0 ? quantizer_scale : 0);
     // Change indication
     if (quantizer_scale != quantizer_scale_prev_)
@@ -726,6 +740,8 @@ void AppWaveBard::UiLoop()
 
     // Quantizer Scale Root selection
     int32_t quantizer_root = pots_[Pot::PITCH_ROOT]->GetMappedValue();
+    quantizer_root += map(lfo_mod.GetModValue(LFO_MOD_ROOT), -POT_MAX, POT_MAX, -11, 11);
+    quantizer_root = constrain(quantizer_root, 0, 11);
 
 #ifdef QUANTIZER_ROOT_TRANSPOSES
 // We don't select the root inside quantizer,
@@ -754,7 +770,7 @@ void AppWaveBard::UiLoop()
     {
 #ifdef QUANTIZER_ROOT_TRANSPOSES
         // trigger on octave change
-        base_pitch = step_map(pots_[Pot::PITCH_QUANTIZED]->GetValue(), kMapPitchOctaves);
+        base_pitch = step_map(lfo_mod.AdjustedPotValue(pots_[Pot::PITCH_QUANTIZED].get()), kMapPitchOctaves);
         if (diff(base_pitch, trigger_base_pitch_prev_) > 0.01f)
         {
             trigger_base_pitch_prev_ = base_pitch;
@@ -795,7 +811,7 @@ void AppWaveBard::UiLoop()
     // Finish with free and fine pitch modulation
     float pitch_free_cv_modded = apply_pot_mod_attenuvert(Kastle2::hw.GetAnalogValue(CV_PITCH_FREE), pitch_mod_pot);
     float free_pitch_mod = std::pow(2.0f, pitch_free_cv_modded / static_cast<float>(ADC_1V)); // proper 1V/octave scaling
-    float fine_pitch_mod = curve_map(pots_[Pot::PITCH_FINE]->GetValue(), kMapPitchFine);
+    float fine_pitch_mod = curve_map(lfo_mod.AdjustedPotValue(pots_[Pot::PITCH_FINE].get()), kMapPitchFine);
     base_pitch *= free_pitch_mod;
     base_pitch *= fine_pitch_mod;
 
@@ -868,7 +884,7 @@ void AppWaveBard::UiLoop()
     envelope_cv_ = Kastle2::hw.GetAnalogValue(CV_ENVELOPE);
 #endif
     int32_t base_envelope = pots_[Pot::ENVELOPE]->GetValue();
-    base_envelope += apply_pot_mod_attenuvert(envelope_cv_, pots_[Pot::ENVELOPE_MOD]->GetValue());
+    base_envelope += apply_pot_mod_attenuvert(envelope_cv_, lfo_mod.AdjustedPotValue(pots_[Pot::ENVELOPE_MOD].get()));
     base_envelope = constrain(base_envelope, POT_MIN, POT_MAX);
     prev_base_envelope_ = base_envelope;
     if (pots_[Pot::ENVELOPE]->HasMoved(FancyPot::Move::TWEAK))
@@ -939,13 +955,13 @@ void AppWaveBard::UiLoop()
     note_sender_.SetDuration(dur);
 
     // SoftClipper
-    int32_t fx_pot = pots_[Pot::FX]->GetValue();
+    int32_t fx_pot = lfo_mod.AdjustedPotValue(pots_[Pot::FX].get());
     playback_clipper_.SetDrive(q15_mult(curve_map(fx_pot, kMapDistortionAmount), q31_to_q15(envelope_.GetOutput())));
     fx_input_clipper_.SetDrive(curve_map(fx_pot, kMapInputDistortionAmount));
     fx_volume_compensation_ = curve_map(fx_pot, kMapFXVolumeCompensation);
 
     // DJ style filter
-    int32_t filter_pot = pots_[Pot::FILTER]->GetValue();
+    int32_t filter_pot = lfo_mod.AdjustedPotValue(pots_[Pot::FILTER].get());
     filter_.SetCrossfade(map(filter_pot, POT_MIN, POT_MAX, Q15_MIN, Q15_MAX));
 
     // because of the resonance we need to make the volume lower at some point
@@ -1099,7 +1115,7 @@ inline void AppWaveBard::UpdateSelectedSample()
 
 inline size_t AppWaveBard::GetPatchedSample()
 {
-    int32_t mod_sample = sticky_map(sample_cv_, -SampleCvMaxValue(), SampleCvMaxValue(), -samples_.num_samples, samples_.num_samples, sticky_sample_mod_);
+    int32_t mod_sample = sticky_map(sample_cv_, -Kastle2::hw.GetSafeCvMaxValue(), Kastle2::hw.GetSafeCvMaxValue(), -samples_.num_samples, samples_.num_samples, sticky_sample_mod_);
     int32_t max_value = samples_.num_samples - 1;
     mod_sample = constrain(mod_sample, -max_value, max_value);
     return (samples_.num_samples + pots_[Pot::SAMPLE]->GetMappedValue() + mod_sample) % samples_.num_samples;
@@ -1109,7 +1125,7 @@ inline size_t AppWaveBard::GetContinousPatchedSample()
 {
     // This function is trying to approximate the simple function above using linear values
     // It's really ugly and I'm sorry for that but it somehow works
-    int32_t mod_sample = map(sample_cv_, -SampleCvMaxValue(), SampleCvMaxValue(), POT_MIN, POT_MAX, MapClamp::TRUE);
+    int32_t mod_sample = map(sample_cv_, -Kastle2::hw.GetSafeCvMaxValue(), Kastle2::hw.GetSafeCvMaxValue(), POT_MIN, POT_MAX, MapClamp::TRUE);
     int32_t continous_value = ((POT_MAX + 1) + mod_sample + pots_[Pot::SAMPLE]->GetValue()) % (POT_MAX + 1);
     continous_value = sticky_map(continous_value, 0, POT_MAX, 0, 127, sticky_sample_continous_mod_);
 

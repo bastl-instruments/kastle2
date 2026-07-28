@@ -28,6 +28,7 @@ SOFTWARE.
 #include <initializer_list>
 #include <type_traits>
 #include <utility>
+#include <version>
 
 #pragma once
 
@@ -52,7 +53,7 @@ public:
     /**
      * @brief Default constructor. Initializes all elements with their default values.
      */
-    EnumArray() = default;
+    constexpr EnumArray() = default;
 
     /**
      * @brief Constructor that initializes the array with an initializer list.
@@ -60,10 +61,13 @@ public:
      *
      * @param init Initializer list of values to fill the array with.
      */
-    EnumArray(std::initializer_list<T> init)
+    constexpr EnumArray(std::initializer_list<T> init)
     {
-        // Runtime check that will assert if the sizes don't match
+#if defined(__cpp_lib_is_constant_evaluated)
+        if (!std::is_constant_evaluated() && init.size() != Size)
+#else
         if (init.size() != Size)
+#endif
         {
             // Using static_assert-like message but with runtime check
             // This will only be caught at runtime
@@ -83,7 +87,7 @@ public:
      * @param e Enum value used as the index.
      * @return Reference to the element at the given index.
      */
-    T &operator[](Enum e)
+    constexpr T &operator[](Enum e)
     {
         return data_[to_index(e)];
     }
@@ -94,7 +98,7 @@ public:
      * @param e Enum value used as the index.
      * @return Const reference to the element at the given index.
      */
-    const T &operator[](Enum e) const
+    constexpr const T &operator[](Enum e) const
     {
         return data_[to_index(e)];
     }
@@ -104,35 +108,35 @@ public:
      *
      * @return Iterator to the beginning.
      */
-    auto begin() { return data_.begin(); }
+    constexpr auto begin() { return data_.begin(); }
 
     /**
      * @brief Returns an iterator to the end of the array.
      *
      * @return Iterator to the end.
      */
-    auto end() { return data_.end(); }
+    constexpr auto end() { return data_.end(); }
 
     /**
      * @brief Returns a const iterator to the beginning of the array.
      *
      * @return Const iterator to the beginning.
      */
-    auto begin() const { return data_.begin(); }
+    constexpr auto begin() const { return data_.begin(); }
 
     /**
      * @brief Returns a const iterator to the end of the array.
      *
      * @return Const iterator to the end.
      */
-    auto end() const { return data_.end(); }
+    constexpr auto end() const { return data_.end(); }
 
     /**
      * @brief Fills the array with the specified value.
      *
      * @param value Value to fill the array with.
      */
-    void fill(const T &value)
+    constexpr void fill(const T &value)
     {
         data_.fill(value);
     }
@@ -141,7 +145,16 @@ public:
      * @brief Returns a pointer to the underlying data array.
      * @return Pointer to the underlying data array.
      */
-    T *data()
+    constexpr T *data()
+    {
+        return data_.data();
+    }
+
+    /**
+     * @brief Returns a const pointer to the underlying data array.
+     * @return Const pointer to the underlying data array.
+     */
+    constexpr const T *data() const
     {
         return data_.data();
     }
@@ -150,7 +163,7 @@ public:
      * @brief Accesses the element at the specified index.
      * @param index Index of the element to access.
      */
-    T &at(size_t index)
+    constexpr T &at(size_t index)
     {
         return data_.at(index);
     }
@@ -159,12 +172,12 @@ public:
      * @brief Accesses the element at the specified index.
      * @param index Index of the element to access.
      */
-    const T &at(size_t index) const
+    constexpr const T &at(size_t index) const
     {
         return data_.at(index);
     }
 
-    constexpr size_t size() const
+    constexpr size_t size() const noexcept
     {
         return Size;
     }
@@ -267,4 +280,19 @@ template <typename EnumType>
 EnumType EnumIncrement(EnumType value)
 {
     return static_cast<EnumType>((std::to_underlying(value) + 1) % std::to_underlying(EnumType::COUNT));
+}
+
+/**
+ * @brief Decrements an enum value and wraps around when it goes below 0
+ * @tparam EnumType The enum type
+ * @author Vaclav Mach (Bastl Instruments)
+ * @date 2026-06-09
+ * @note The enum type must have a COUNT value to determine the size of the enum.
+ * @param value Current enum value
+ * @return The previous enum value, or last value if at the beginning
+ */
+template <typename EnumType>
+EnumType EnumDecrement(EnumType value)
+{
+    return static_cast<EnumType>((std::to_underlying(value) + std::to_underlying(EnumType::COUNT) - 1) % std::to_underlying(EnumType::COUNT));
 }
