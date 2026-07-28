@@ -155,27 +155,27 @@ public:
 private:
     static constexpr EnumArray<Destination, LfoMod::Target> kTargets = {
         {Hardware::Pot::COUNT, Hardware::Layer::COUNT, WS2812::BLACK}, // default has to have something in it, even tho it's not used
-        {Hardware::Pot::POT_1, Hardware::Layer::NORMAL, WS2812::GREEN},
+        {Hardware::Pot::POT_1, Hardware::Layer::NORMAL, WS2812::CORAL},
         {Hardware::Pot::POT_2, Hardware::Layer::NORMAL, WS2812::YELLOW},
-        {Hardware::Pot::POT_3, Hardware::Layer::NORMAL, WS2812::ORANGE},
-        {Hardware::Pot::POT_4, Hardware::Layer::NORMAL, WS2812::RED},
-        {Hardware::Pot::POT_5, Hardware::Layer::NORMAL, WS2812::PINK},
+        {Hardware::Pot::POT_3, Hardware::Layer::NORMAL, WS2812::COLD_WHITE},
+        {Hardware::Pot::POT_4, Hardware::Layer::NORMAL, WS2812::WARM_WHITE},
+        {Hardware::Pot::POT_5, Hardware::Layer::NORMAL, WS2812::TEAL},
         {Hardware::Pot::POT_6, Hardware::Layer::NORMAL, WS2812::PURPLE},
         {Hardware::Pot::POT_7, Hardware::Layer::NORMAL, WS2812::BLUE},
-        {Hardware::Pot::POT_1, Hardware::Layer::SHIFT, WS2812::CYAN},
-        {Hardware::Pot::POT_2, Hardware::Layer::SHIFT, WS2812::TURQUOISE},
-        {Hardware::Pot::POT_3, Hardware::Layer::SHIFT, WS2812::AQUAMARINE},
-        {Hardware::Pot::POT_4, Hardware::Layer::SHIFT, WS2812::TEAL},
-        {Hardware::Pot::POT_5, Hardware::Layer::SHIFT, WS2812::DARK_BLUE},
-        {Hardware::Pot::POT_6, Hardware::Layer::SHIFT, WS2812::NAVY},
-        {Hardware::Pot::POT_7, Hardware::Layer::SHIFT, WS2812::INDIGO},
-        {Hardware::Pot::POT_1, Hardware::Layer::MODE, WS2812::VIOLET},
-        {Hardware::Pot::POT_2, Hardware::Layer::MODE, WS2812::MAGENTA},
-        {Hardware::Pot::POT_3, Hardware::Layer::MODE, WS2812::RASPBERRY},
-        {Hardware::Pot::POT_4, Hardware::Layer::MODE, WS2812::MAROON},
-        {Hardware::Pot::POT_5, Hardware::Layer::MODE, WS2812::BROWN},
-        {Hardware::Pot::POT_6, Hardware::Layer::MODE, WS2812::OLIVE},
-        {Hardware::Pot::POT_7, Hardware::Layer::MODE, WS2812::KHAKI}};
+        {Hardware::Pot::POT_1, Hardware::Layer::SHIFT, 0x00B0FF},
+        {Hardware::Pot::POT_2, Hardware::Layer::SHIFT, 0x0080FF},
+        {Hardware::Pot::POT_3, Hardware::Layer::SHIFT, 0x0040FF},
+        {Hardware::Pot::POT_4, Hardware::Layer::SHIFT, 0x0000FF},
+        {Hardware::Pot::POT_5, Hardware::Layer::SHIFT, 0x8000FF},
+        {Hardware::Pot::POT_6, Hardware::Layer::SHIFT, 0xFF00FF},
+        {Hardware::Pot::POT_7, Hardware::Layer::SHIFT, 0xFF00AF},
+        {Hardware::Pot::POT_1, Hardware::Layer::MODE, 0xFFAF00},
+        {Hardware::Pot::POT_2, Hardware::Layer::MODE, 0xFFFF00},
+        {Hardware::Pot::POT_3, Hardware::Layer::MODE, 0x50FF00},
+        {Hardware::Pot::POT_4, Hardware::Layer::MODE, 0x00FF00},
+        {Hardware::Pot::POT_5, Hardware::Layer::MODE, 0x00FF30},
+        {Hardware::Pot::POT_6, Hardware::Layer::MODE, 0x00FF60},
+        {Hardware::Pot::POT_7, Hardware::Layer::MODE, 0x00FFA0}};
 
     Destination destination_ = Destination::DEFAULT;
     Destination previous_destination_ = Destination::DEFAULT;
