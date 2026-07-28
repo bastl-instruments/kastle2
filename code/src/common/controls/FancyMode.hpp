@@ -188,6 +188,7 @@ public:
     void DisableNextChangeWhen(const Container &all_pots, uint32_t over_ticks = 0)
     {
         tweak_pots_.clear();
+        AddBaseTweakPots();
         for (const auto &pot : all_pots)
         {
             if (pot && pot->GetLayer() == Hardware::Layer::MODE)
@@ -231,6 +232,11 @@ private:
     uint32_t over_ticks_ = 0;            ///< If defined we will disable next change when the current layer time is over this number of ticks
 
     uint32_t adc_input_value_ = 0; ///< Current input value from the ADC, used for mode calculation
+
+    /**
+     * @brief Adds the pots from the Base that should be used to disable the next change when they are moved.
+     */
+    void AddBaseTweakPots();
 };
 
 }

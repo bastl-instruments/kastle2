@@ -245,6 +245,51 @@ public:
     }
 
     /**
+     * @brief Base Potentiometers
+     */
+    // Pots
+    enum class Pot
+    {
+        TEMPO,
+        INPUT,
+        LFO,
+        LFO_MOD,
+        OUTPUT,
+        RHYTHM,
+        SWING,
+        SETTINGS_MONO_INPUT,
+        SETTINGS_SYNC_INPUT,
+        SETTINGS_LFO_MOD,
+        SETTINGS_NORMAL_2,
+        SETTINGS_NORMAL_4,
+        SETTINGS_NORMAL_6,
+        SETTINGS_SHIFT_1,
+        SETTINGS_SHIFT_2,
+        SETTINGS_SHIFT_3,
+        SETTINGS_SHIFT_4,
+        SETTINGS_SHIFT_5,
+        SETTINGS_SHIFT_6,
+        SETTINGS_SHIFT_7,
+        SETTINGS_MODE_1,
+        SETTINGS_MODE_2,
+        SETTINGS_MODE_3,
+        SETTINGS_MODE_4,
+        SETTINGS_MODE_5,
+        SETTINGS_MODE_6,
+        SETTINGS_MODE_7,
+        COUNT
+    };
+
+    /**
+     * @brief Returns the array of FancyPot instances for the base pots.
+     * @return EnumArray<Pot, std::unique_ptr<FancyPot>>& Reference to the array of FancyPot instances.
+     */
+    inline const EnumArray<Pot, std::unique_ptr<FancyPot>> &GetPots()
+    {
+        return pots_;
+    }
+
+    /**
      * @brief Enables or disables selecting multiple LFO modulation destinations from settings pots.
      * @param enabled True to allow selecting the destinations, false to block selection from UI pots.
      * @param destinations Destinations to enable or disable. (multiple can be written, e.g. LfoMod::Destination::NORMAL_1, LfoMod::Destination::NORMAL_2)
@@ -314,6 +359,11 @@ private:
     // Sequencer
     Sequencer sequencer_;
     EdgeDetector sequencer_edge_detector_{EdgeDetector::Type::RISING};
+
+    Sequencer::Feed pending_trigger_feed_ = Sequencer::Feed::SAME;
+    Sequencer::Feed pending_cv_feed_ = Sequencer::Feed::SAME;
+    bool swing_step_pending_ = false;
+
     int32_t rhythm_modulation_prev_ = 0;
 
     // Volumes
@@ -337,37 +387,6 @@ private:
     };
     StartupEnvState startup_env_state_ = StartupEnvState::OUTPUT;
 
-    // Pots
-    enum class Pot
-    {
-        TEMPO,
-        INPUT,
-        LFO,
-        LFO_MOD,
-        OUTPUT,
-        RHYTHM,
-        SETTINGS_MONO_INPUT,
-        SETTINGS_SYNC_INPUT,
-        SETTINGS_LFO_MOD,
-        SETTINGS_NORMAL_2,
-        SETTINGS_NORMAL_4,
-        SETTINGS_NORMAL_6,
-        SETTINGS_SHIFT_1,
-        SETTINGS_SHIFT_2,
-        SETTINGS_SHIFT_3,
-        SETTINGS_SHIFT_4,
-        SETTINGS_SHIFT_5,
-        SETTINGS_SHIFT_6,
-        SETTINGS_SHIFT_7,
-        SETTINGS_MODE_1,
-        SETTINGS_MODE_2,
-        SETTINGS_MODE_3,
-        SETTINGS_MODE_4,
-        SETTINGS_MODE_5,
-        SETTINGS_MODE_6,
-        SETTINGS_MODE_7,
-        COUNT
-    };
     EnumArray<Pot, std::unique_ptr<FancyPot>> pots_;
 
     // MIDI Out Pot stuff

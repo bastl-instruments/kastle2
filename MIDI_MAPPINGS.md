@@ -12,7 +12,7 @@ By default most apps use MIDI notes 0-47 to switch between modes or banks. Note 
 
 ## CC Input (handled by Base & Apps)
 
-Settings Main Volume (CC7), Input Gain (CC9), LFO (CC22), LFO Mod (CC23), Tempo (CC24) and Rhythm (CC25) are handled by Base. All other are handled by Apps.
+Settings Main Volume (CC7), Input Gain (CC9), LFO (CC22), LFO Mod (CC23), Tempo (CC24), Rhythm (CC25) and Swing (CC32) are handled by Base. All other are handled by Apps.
 
 ## Note Output (handled by Apps)
 

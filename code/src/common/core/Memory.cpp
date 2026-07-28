@@ -109,6 +109,7 @@ bool Memory::WriteDefaultSettings()
     result &= Write8(ADDR_MIDI_CHANNEL, midi::Message::kAllChannels);
     result &= Write8(ADDR_MONO_SETTINGS, 0u);
     result &= Write8(ADDR_LFO_MOD_ASSIGNMENT, static_cast<uint8_t>(LfoMod::Destination::DEFAULT));
+    result &= Write8(ADDR_SWING, 127u);
     result &= ClearAppSpace();
     return result;
 }

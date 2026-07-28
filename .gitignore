@@ -26,3 +26,6 @@ Desktop.ini
 
 # Vim
 *.sw?
+
+# CLion
+.idea

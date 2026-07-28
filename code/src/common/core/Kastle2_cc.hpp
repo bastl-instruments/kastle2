@@ -39,6 +39,7 @@ static constexpr uint8_t LFO = 22;        // lfo (bottom right knob)
 static constexpr uint8_t LFO_MOD = 23;    // lfo mod (bottom left knob)
 static constexpr uint8_t TEMPO = 24;      // tempo (shift+ bottom right knob)
 static constexpr uint8_t RHYTHM = 25;     // rhythm (shift + bottom left knob)
+static constexpr uint8_t SWING = 32;      // swing (mode + bottom right knob)
 
 static constexpr uint8_t RESET_CONTROLLERS = 121; // reset all controllers
 static constexpr uint8_t ALL_NOTES_OFF = 123;     // all notes off
