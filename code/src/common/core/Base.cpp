@@ -637,6 +637,11 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
     }
 
     midi_number_flasher_.Process();
+
+    if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
+    {
+        DecrementLfoModDestChangeCounter();
+    }
 }
 
 void Base::UpdateCvOut()
@@ -1174,7 +1179,6 @@ void Base::BeforeUiLoop()
     // Lfo Modulation destination change indication (visible across all settings modes)
     if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
     {
-        IncrementLfoModDestChangeCounter();
         if (lfo_mod_.DestinationChanged())
         {
             Kastle2::memory.Write8(Memory::ADDR_LFO_MOD_ASSIGNMENT, static_cast<unsigned int>(lfo_mod_.GetDestination()));
@@ -1549,25 +1553,24 @@ Lfo &Base::GetLfo()
 
 void Base::IndicateLfoModDestChange()
 {
-    ui_lfo_mod_change_indication_counter_ = 0;
+    ui_lfo_mod_change_indication_counter_ = kUiIndicateLfoModChangeTimeDark * 2 + kUiIndicateLfoModChangeTimeLight;
 }
 
-void Base::IncrementLfoModDestChangeCounter()
+void Base::DecrementLfoModDestChangeCounter()
 {
-    if (ui_lfo_mod_change_indication_counter_ < SIZE_MAX)
+    if (ui_lfo_mod_change_indication_counter_ > 0)
     {
-        ui_lfo_mod_change_indication_counter_++;
+        ui_lfo_mod_change_indication_counter_--;
     }
 }
 
 bool Base::IsLfoModDestChangeActive()
 {
-    return ui_lfo_mod_change_indication_counter_ < kUiIndicateLfoModChangeTimeDark * 2 + kUiIndicateLfoModChangeTimeLight;
+    return ui_lfo_mod_change_indication_counter_ > 0;
 }
 
 uint32_t Base::LfoModDestChangeColor()
 {
-
     if (ui_lfo_mod_change_indication_counter_ > kUiIndicateLfoModChangeTimeDark &&
         ui_lfo_mod_change_indication_counter_ < kUiIndicateLfoModChangeTimeLight + kUiIndicateLfoModChangeTimeDark)
     {

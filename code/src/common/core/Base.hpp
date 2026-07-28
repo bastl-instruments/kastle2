@@ -419,11 +419,11 @@ private:
     size_t input_clipping_counter_ = 0;
 
     // lfo mod destination change indication
-    static constexpr uint32_t kUiIndicateLfoModChangeTimeDark = s2alr(0.015f); // 15ms
-    static constexpr uint32_t kUiIndicateLfoModChangeTimeLight = s2alr(0.04f); // 40ms
+    static constexpr uint32_t kUiIndicateLfoModChangeTimeDark = s2alr(0.1f); // 100ms
+    static constexpr uint32_t kUiIndicateLfoModChangeTimeLight = s2alr(0.2f); // 200ms
     uint32_t ui_lfo_mod_change_indication_counter_ = 0;
     void IndicateLfoModDestChange();
-    void IncrementLfoModDestChangeCounter();
+    void DecrementLfoModDestChangeCounter();
     bool IsLfoModDestChangeActive();
     uint32_t LfoModDestChangeColor();
     bool cancel_midi_learn_tap_ = false;
