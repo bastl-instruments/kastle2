@@ -106,35 +106,41 @@
         },
         {
             "label": "build_all",
-            "type": "process",
-            "command": "make",
+            "type": "shell",
+            "command": "make -j\"$(sysctl -n hw.ncpu 2>/dev/null || nproc)\" all",
             "options": {
-                "cwd": "${workspaceRoot}/code/build"
+                "cwd": "${workspaceRoot}/code/build",
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": [
+                        "-c"
+                    ]
+                }
             },
             "presentation": {
                 "clear": true,
                 "showReuseMessage": false,
                 "group": "pico"
-            },
-            "args": [
-                "all"
-            ]
+            }
         },
         {
             "label": "build",
-            "type": "process",
-            "command": "make",
+            "type": "shell",
+            "command": "make -j\"$(sysctl -n hw.ncpu 2>/dev/null || nproc)\" ${input:target}",
             "options": {
-                "cwd": "${workspaceRoot}/code/build"
+                "cwd": "${workspaceRoot}/code/build",
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": [
+                        "-c"
+                    ]
+                }
             },
             "presentation": {
                 "clear": true,
                 "showReuseMessage": false,
                 "group": "pico"
-            },
-            "args": [
-                "${input:target}"
-            ]
+            }
         },
         {
             "label": "build_and_upload_usb",
