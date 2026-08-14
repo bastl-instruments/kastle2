@@ -39,6 +39,16 @@ LfoMod::Destination LfoMod::GetDestination() const
     return destination_;
 }
 
+bool LfoMod::IsDestination(FancyPot *pot) const
+{
+    if (pot == nullptr)
+    {
+        return 0;
+    }
+    const Target &dest = kTargets[FixDestination(destination_)];
+    return (dest.pot == pot->GetPot() && dest.layer == pot->GetLayer());
+}
+
 const LfoMod::Target &LfoMod::GetTarget() const
 {
     return kTargets[FixDestination(destination_)];

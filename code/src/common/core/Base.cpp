@@ -481,6 +481,16 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
     clock_.SetSyncJackPlugged(sync_enabled && Kastle2::hw.IsSyncInJackProbablyPlugged());
     bool sync_in = sync_enabled && Kastle2::hw.GetSyncIn();
 
+    // Only true for the audio loop the step actually starts on, see IsNowStep().
+    step_now_ = false;
+
+    // The gate runs on its own countdown, restarted by StartGate() on every step. Ticked
+    // down before the step handling so a step firing this tick keeps its full length.
+    if (gate_ticks_remaining_ > 0)
+    {
+        gate_ticks_remaining_--;
+    }
+
     // Reset sequencer?
     bool do_cv_update = false;
     Hardware::FeedValue feed2 = Kastle2::hw.GetFeedValue(Hardware::AnalogInput::FEED_2);
@@ -500,6 +510,7 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
         {
             // Reset the sequencer
             sequencer_.Reset();
+            OnStepStarted();
             do_cv_update = true;
         }
         else
@@ -536,16 +547,26 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
                 break;
             }
 
+            // A swing step can still be waiting here when the tempo jumped up and the
+            // averaged step length used for the delay overshot the real one. Fire it
+            // now, otherwise scheduling over it would silently drop a step.
+            if (sequencer_.IsSwingStepPending())
+            {
+                sequencer_.NextStep(pending_trigger_feed_, pending_cv_feed_);
+                OnStepStarted();
+                do_cv_update = true;
+            }
+
             if (sequencer_.GetSwingType() != Sequencer::SwingType::NONE)
             {
                 pending_trigger_feed_ = trigger_feed;
                 pending_cv_feed_ = cv_feed;
-                swing_step_pending_ = true;
                 sequencer_.ScheduleSwingStep(clock_.GetAverageTargetTicks());
             }
             else
             {
                 sequencer_.NextStep(trigger_feed, cv_feed);
+                OnStepStarted();
                 do_cv_update = true;
             }
         }
@@ -555,11 +576,11 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
     }
     clock_midi_pulse_ = false;
 
-    if (swing_step_pending_ && sequencer_.ProcessSwingTick())
+    if (sequencer_.ProcessSwingTick())
     {
         sequencer_.NextStep(pending_trigger_feed_, pending_cv_feed_);
+        OnStepStarted();
         do_cv_update = true;
-        swing_step_pending_ = false;
     }
 
     if (lfo_.IsSynced())
@@ -580,7 +601,14 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
         lfo_.Resume();
     }
 
-    if (clock_.IsReachingNextCycle())
+    // Publish the CV of the upcoming step slightly ahead of it. With swing active the
+    // step no longer lands on the clock grid, so the lookahead has to track the swung
+    // position - otherwise CV would jump on the straight grid while the trigger waits.
+    bool reaching_next_step = sequencer_.GetSwingType() == Sequencer::SwingType::NONE
+                                  ? clock_.IsReachingNextCycle()
+                                  : sequencer_.IsReachingSwungStep();
+
+    if (reaching_next_step)
     {
         if (sequencer_.ReachingNextCycle())
         {
@@ -652,12 +680,43 @@ void Base::UpdateCvOut()
     }
 }
 
+void Base::OnStepStarted()
+{
+    step_now_ = true;
+    StartGate();
+}
+
+bool Base::IsNowStep() const
+{
+    return step_now_ && clock_.IsOutputEnabled();
+}
+
+void Base::StartGate()
+{
+    const uint32_t target_ticks = clock_.GetTargetTicks();
+    const uint32_t nominal_ticks = (target_ticks * kBaseGateLength) / 100;
+
+    // The next step lands on the clock tick at the earliest (swing only ever delays it),
+    // so that is how much room this gate has. A swung step starts late into the cycle and
+    // would otherwise run its full length straight into the following trigger.
+    const uint32_t current_ticks = clock_.GetCurrentTicks();
+    const uint32_t until_next_ticks = target_ticks > current_ticks ? target_ticks - current_ticks : 0;
+
+    // Never eat more than the duty cycle already reserves, that keeps the gate audible at
+    // fast tempos and leaves unswung timing untouched.
+    const uint32_t gap_cap_ticks = (target_ticks * (100 - kBaseGateLength)) / 100;
+    const uint32_t gap_ticks = kBaseGateMinGapTicks < gap_cap_ticks ? kBaseGateMinGapTicks : gap_cap_ticks;
+
+    const uint32_t max_ticks = until_next_ticks > gap_ticks ? until_next_ticks - gap_ticks : 0;
+
+    gate_ticks_remaining_ = nominal_ticks < max_ticks ? nominal_ticks : max_ticks;
+}
+
 void Base::UpdateGateOut()
 {
-    bool gate_enabled = clock_.GetPercentageState() < kBaseGateLength;
     Kastle2::hw.SetGateOut(
         clock_.IsOutputEnabled() &&
-        gate_enabled &&
+        gate_ticks_remaining_ > 0 &&
         sequencer_.GetTriggerOutput());
 }
 
@@ -1144,7 +1203,8 @@ void Base::BeforeUiLoop()
             else
             {
                 // Showing LFO LED (only when the outputs are enabled)
-                if(IsFeatureEnabled(Feature::LFO_OUT)){
+                if (IsFeatureEnabled(Feature::LFO_OUT))
+                {
 
                     // Pick the color
                     uint32_t color = lfo_.IsSynced() ? kBaseColorLfoSynced : kBaseColorLfoFree;
@@ -1279,19 +1339,20 @@ void Base::BeforeUiLoop()
 
     if (IsFeatureEnabled(Feature::LFO_MOD_MAPPING))
     {
-        // this is to make it flash even tho the destination hasn't changed (it feels better)
-        bool indicate_change = false;
-        // make the LEDs have a dimmed version of the color of the currently selected destination
-        int32_t lfo_mod_color = WS2812::ApplyBrightness(lfo_mod_.GetTarget().color, 0x20);
-
         if (Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_SHIFT ||
             Kastle2::hw.GetLayer() == Hardware::Layer::SETTINGS_MODE)
         {
-            Kastle2::hw.SetLed(Hardware::Led::LED_1, lfo_mod_color);
-            Kastle2::hw.SetLed(Hardware::Led::LED_2, lfo_mod_color);
-            Kastle2::hw.SetLed(Hardware::Led::LED_3, lfo_mod_color);
+            // Clear the LEDs when in the LFO MOD assignment
+            Kastle2::hw.SetLed(Hardware::Led::LED_1, 0);
+            Kastle2::hw.SetLed(Hardware::Led::LED_2, 0);
+            Kastle2::hw.SetLed(Hardware::Led::LED_3, 0);
 
             MidiAdvancedSettings(cancel_midi_learn_tap_, cancel_midi_learn_tap_);
+
+            if(Kastle2::hw.JustPressed(Hardware::Button::SHIFT) || Kastle2::hw.JustPressed(Hardware::Button::MODE))
+            {
+                ui_lfo_mod_last_destination_ = LfoMod::Destination::COUNT;
+            }
         }
 
         bool cancel_midi_learn_tap = false;
@@ -1318,15 +1379,16 @@ void Base::BeforeUiLoop()
             }
 
             lfo_mod_.SetDestination(destination);
-            indicate_change = true;
+            cancel_midi_learn_tap_ = true;
+
+            if (destination != ui_lfo_mod_last_destination_)
+            {
+                ui_lfo_mod_last_destination_ = destination;
+                IndicateLfoModDestChange();
+            }
         }
 
-        if (indicate_change)
-        {
-            IndicateLfoModDestChange();
-            cancel_midi_learn_tap_ = true;
-        }
-        else if (cancel_midi_learn_tap)
+        if (cancel_midi_learn_tap)
         {
             cancel_midi_learn_tap_ = true;
         }
@@ -1574,7 +1636,12 @@ uint32_t Base::LfoModDestChangeColor()
     if (ui_lfo_mod_change_indication_counter_ > kUiIndicateLfoModChangeTimeDark &&
         ui_lfo_mod_change_indication_counter_ < kUiIndicateLfoModChangeTimeLight + kUiIndicateLfoModChangeTimeDark)
     {
-        return lfo_mod_.GetTarget().color;
+        // We don't use the custom colors for now
+        // return lfo_mod_.GetTarget().color;
+
+        // Global color signal for LFO MOD destination change
+        return kBaseColorLfoModDestChange;
+
     }
     return WS2812::BLACK;
 }

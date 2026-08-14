@@ -216,6 +216,28 @@ public:
     bool ProcessSwingTick();
 
     /**
+     * @brief Is a swing step scheduled and still waiting to fire?
+     */
+    bool IsSwingStepPending() const { return swing_pending_; }
+
+    /**
+     * @brief Returns true a tiny bit before a scheduled swing step fires.
+     *
+     * The swing counterpart of Clock::IsReachingNextCycle(): while swing is active the
+     * step no longer lands on the clock grid, so the CV lookahead has to follow the
+     * swung position instead of the clock's.
+     */
+    bool IsReachingSwungStep() const { return swing_pending_ && swing_delay_counter_ <= kCvLookaheadTicks; }
+
+    /**
+     * @brief How many ticks before a step the CV output is published.
+     *
+     * Matches the largest lookahead of the clock sources so a swung step gets the same
+     * settling headroom the straight grid gets from Clock::IsReachingNextCycle().
+     */
+    static constexpr uint32_t kCvLookaheadTicks = 3;
+
+    /**
      * @brief Lower bound of the swing pot dead zone.
      */
     static constexpr float kSwingHumanizeThreshold = 0.45f;
@@ -248,6 +270,15 @@ public:
     static constexpr uint32_t kVoltageMap[8] = {0, 320, 480, 600, 720, 800, 880, 1020};
 
 private:
+    /**
+     * @brief Drops a scheduled swing step without firing it.
+     */
+    void CancelSwingStep()
+    {
+        swing_pending_ = false;
+        swing_delay_counter_ = 0;
+    }
+
     /**
      * @brief Updates the CV output based on current CV bit pattern.
      */

@@ -150,6 +150,21 @@ public:
     Sequencer &GetSequencer();
 
     /**
+     * @brief Did the sequencer move to a new step in this audio loop?
+     *
+     * The swing aware counterpart of Clock::IsNowTrigger(). With swing active the step no
+     * longer lands on the clock tick, so apps that want to stay in time with what the
+     * sequencer actually plays should quantize to this instead of to the raw clock.
+     * Covers every way the sequencer can move: the plain clock tick, the delayed swing
+     * step and a reset.
+     *
+     * @note Set in BeforeAudioLoop() and valid for the rest of that audio loop, so read it
+     *       from the app audio loop. The UI loop runs at its own rate and will miss steps.
+     * @return True on the single audio loop the step started on.
+     */
+    bool IsNowStep() const;
+
+    /**
      * Returns the LFO object
      * @return Lfo& Reference to the LFO object.
      */
@@ -344,6 +359,17 @@ private:
     void UpdateCvOut();
     void UpdateGateOut();
 
+    /**
+     * @brief (Re)starts the gate countdown. Call whenever the sequencer advances a step.
+     */
+    void StartGate();
+
+    /**
+     * @brief Everything that has to happen the moment the sequencer moves to a new step,
+     *        no matter what moved it (clock tick, delayed swing step, reset).
+     */
+    void OnStepStarted();
+
     // Keeping the value here to handle hysteresis
     bool lfo_sync_ = false;
     uint32_t lfo_pot_ratio_ = 0;
@@ -362,7 +388,13 @@ private:
 
     Sequencer::Feed pending_trigger_feed_ = Sequencer::Feed::SAME;
     Sequencer::Feed pending_cv_feed_ = Sequencer::Feed::SAME;
-    bool swing_step_pending_ = false;
+
+    // Ticks left of the current gate. Counted from the step that actually fired rather
+    // than from the clock cycle, so a swung step still gets its full gate length.
+    uint32_t gate_ticks_remaining_ = 0;
+
+    // Set for the single audio loop the sequencer moved on, see IsNowStep().
+    bool step_now_ = false;
 
     int32_t rhythm_modulation_prev_ = 0;
     int32_t swing_modulation_prev_ = 0;
@@ -422,6 +454,7 @@ private:
     static constexpr uint32_t kUiIndicateLfoModChangeTimeDark = s2alr(0.1f); // 100ms
     static constexpr uint32_t kUiIndicateLfoModChangeTimeLight = s2alr(0.2f); // 200ms
     uint32_t ui_lfo_mod_change_indication_counter_ = 0;
+    LfoMod::Destination ui_lfo_mod_last_destination_ = LfoMod::Destination::COUNT;
     void IndicateLfoModDestChange();
     void DecrementLfoModDestChangeCounter();
     bool IsLfoModDestChangeActive();

@@ -62,6 +62,13 @@ void Sequencer::Reset()
 {
     current_step_ = 0;
     reaching_next_cycle_ = false;
+
+    // A swing step still waiting to fire belongs to the position we just left, keeping
+    // it would advance us off step 0 right after the reset.
+    CancelSwingStep();
+    swing_even_step_ = false;
+    humanize_index_ = 0;
+
     UpdateCvOutput();
     UpdateTriggerOutput();
 }
@@ -69,6 +76,11 @@ void Sequencer::Reset()
 void Sequencer::RealignTo(const size_t steps)
 {
     current_step_ = steps % length_;
+
+    // The realigned position supersedes a swing step still waiting to fire, letting it
+    // through would immediately advance us one step past where we were told to be.
+    CancelSwingStep();
+
     UpdateCvOutput();
     UpdateTriggerOutput();
 }
@@ -76,6 +88,12 @@ void Sequencer::RealignTo(const size_t steps)
 void Sequencer::NextStep(const Feed trigger_feed, const Feed cv_feed)
 {
     reaching_next_cycle_ = false;
+
+    // This call consumes whatever swing step was scheduled, no matter who triggered it.
+    // Without this a step fired ahead of its delay (tempo jump) would still be fired a
+    // second time by ProcessSwingTick().
+    CancelSwingStep();
+
     current_step_ = (current_step_ + 1) % length_;
 
     // Read current trigger

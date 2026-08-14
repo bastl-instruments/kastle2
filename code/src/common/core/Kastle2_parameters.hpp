@@ -56,6 +56,8 @@ static constexpr uint32_t kBaseColorMonoRight = WS2812::RED;
 static constexpr uint32_t kBaseColorSyncEnabled = WS2812::GREEN;
 static constexpr uint32_t kBaseColorSyncDisabled = WS2812::RED;
 
+static constexpr uint32_t kBaseColorLfoModDestChange = WS2812::GREEN;
+
 static constexpr auto kMapLoudnessLedGreen = MapDef<q15_t, 4>{
     {q15(0.0f), q15(0.5f), q15(0.75f), q15(1.0f)},
     {0, 255, 0, 0}};
@@ -127,6 +129,16 @@ static constexpr size_t kMidiTempoDividerDefault = 6; // real value, not index
 
 // --- GATE SIZE ---
 static constexpr uint32_t kBaseGateLength = 75; ///< Length of the gate output in percents.
+
+/**
+ * @brief Silence kept between a gate and the next trigger, so they never merge.
+ *
+ * A swung step starts late but the step after it can land right on the clock tick, which
+ * would leave the two gates touching. The gate is shortened to preserve this gap.
+ * It is capped at the (100 - kBaseGateLength) the duty cycle already reserves, so fast
+ * tempos keep an audible gate and unswung timing stays exactly as it was.
+ */
+static constexpr uint32_t kBaseGateMinGapTicks = s2alr(0.010f);
 
 // --- TRIGGER GENERATOR TABLE (can be overwritten by firmwares) ---
 static constexpr std::array<uint32_t, 16> kBaseRhythmTable = {

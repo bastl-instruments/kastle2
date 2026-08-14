@@ -111,6 +111,13 @@ public:
     Destination GetDestination() const;
 
     /**
+     * @brief Returns true if the possed pot is the current destination for LFO modulation.
+     * @param pot Pointer to the potentiometer to check.
+     * @return True if the pot is the current destination, false otherwise.
+     */
+    bool IsDestination(FancyPot *pot) const;
+
+    /**
      * @brief Updates the potentiometer and modulation values for LFO modulation.
      * @param pot The potentiometer value (0-4095).
      * @param mod The modulation value (0-4095).
