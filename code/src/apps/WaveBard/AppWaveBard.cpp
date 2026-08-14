@@ -734,7 +734,10 @@ void AppWaveBard::UiLoop()
         if (pots_[Pot::PITCH_ROOT]->GetSource() == FancyPot::Source::INTERNAL)
         {
             bank_select_.DisableNextChange();
-            UiIndicateChange();
+            if (Kastle2::hw.GetLayer() == Hardware::Layer::MODE)
+            {
+                UiIndicateChange();
+            }
         }
     }
 
@@ -759,7 +762,10 @@ void AppWaveBard::UiLoop()
         if (pots_[Pot::PITCH_ROOT]->GetSource() == FancyPot::Source::INTERNAL)
         {
             bank_select_.DisableNextChange();
-            UiIndicateChange();
+            if (Kastle2::hw.GetLayer() == Hardware::Layer::MODE)
+            {
+                UiIndicateChange();
+            }
         }
     }
 
