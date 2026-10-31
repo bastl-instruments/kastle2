@@ -2,6 +2,9 @@
 
 Sample player firmware for the Kastle 2 platform. Has three main parameters: Sample, Pitch and Length.  
 Bank button switches between banks.   
+
+Hold the Bank button and turn the Sample knob to select 3, 4, 7, 8, 10, 14, or 16 sequencer steps from left to right. The seven choices are evenly distributed across the knob. The upper-left LED briefly flashes off only when the selected step count changes, and the length takes effect on the next step without restarting playback.
+
 By default there are 6 banks of 8 samples.
 
 ## How to build
