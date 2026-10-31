@@ -146,6 +146,7 @@ private:
     enum class Pot
     {
         SAMPLE,
+        SAMPLE_STEPS,
         SAMPLE_MOD,
         PITCH,
         PITCH_MOD,
@@ -315,6 +316,8 @@ private:
      * @brief Timer for UI change indication LED flash.
      */
     size_t ui_indicate_change_time_ = 0;
+
+    size_t step_choice_prev_ = SIZE_MAX;
 
     /**
      * @brief UI loop counter for performance optimization (not all stuff needs to be done each UI loop).

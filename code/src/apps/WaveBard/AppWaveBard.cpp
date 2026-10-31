@@ -179,6 +179,9 @@ void AppWaveBard::Init()
                                                .midi_cc = cc::FINE,
                                                .deadzone = true,
                                                .memory_addr = kMemPotFine});
+    pots_[Pot::SAMPLE_STEPS] = FancyPot::Create({.pot = Hardware::Pot::POT_6,
+                                                 .layer = Hardware::Layer::MODE,
+                                                 .map_size = 7});
     pots_[Pot::PITCH_QUANTIZED] = FancyPot::Create({.pot = Hardware::Pot::POT_5,
                                                     .layer = Hardware::Layer::MODE});
 
@@ -219,6 +222,7 @@ void AppWaveBard::Init()
     delay_stereo_right_ = 0;
 
     ui_indicate_change_time_ = 0;
+    step_choice_prev_ = SIZE_MAX;
 
     delay_left_ = std::make_unique<AdvancedDynamicDelayLine<q15least_t>>(22000);
     delay_right_ = std::make_unique<AdvancedDynamicDelayLine<q15least_t>>(22000);
@@ -639,6 +643,19 @@ void AppWaveBard::UiLoop()
 
     // Read the bank selector, does the button switching etc.
     bank_select_.ReadValue();
+
+    if (Kastle2::hw.GetLayer() == Hardware::Layer::MODE &&
+        pots_[Pot::SAMPLE_STEPS]->HasChanged())
+    {
+        static constexpr size_t kSequencerLengths[] = {3, 4, 7, 8, 10, 14, 16};
+        const size_t step_choice = constrain(pots_[Pot::SAMPLE_STEPS]->GetMappedValue(), 0, 6);
+        if (step_choice != step_choice_prev_)
+        {
+            step_choice_prev_ = step_choice;
+            Kastle2::base.GetSequencer().SetLengthAtNextStep(kSequencerLengths[step_choice]);
+            UiIndicateChange();
+        }
+    }
 
     // Do switching magic
     if (Kastle2::hw.GetLayer() != Kastle2::base.GetPrevLayer())
