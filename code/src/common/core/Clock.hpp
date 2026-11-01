@@ -24,6 +24,10 @@ SOFTWARE.
 
 #pragma once
 
+#include <atomic>
+
+#include <atomic>
+
 #include "common/EnumTools.hpp"
 #include "common/core/clocks/ClockSource.hpp"
 #include "common/core/midi/Message.hpp"
@@ -128,6 +132,30 @@ public:
     }
 
     /**
+     * @brief Gets the number of clock cycles since the last transport start.
+     */
+    inline uint32_t GetCycleCount() const
+    {
+        return cycle_count_.load(std::memory_order_relaxed);
+    }
+
+    /**
+     * @brief Sets how many clock cycles make up one tempo LED flash interval.
+     */
+    inline void SetTempoLedDivision(size_t division)
+    {
+        tempo_led_division_.store(division > 0 ? division : 1, std::memory_order_relaxed);
+    }
+
+    /**
+     * @brief Returns whether a tempo LED flash is currently active.
+     */
+    inline bool IsTempoLedFlashActive() const
+    {
+        return tempo_led_flash_ticks_.load(std::memory_order_relaxed) > 0;
+    }
+
+    /**
      * @brief Returns true a tiny bit before the next cycle. Necessary for the sequencer to update CV slightly before the next cycle.
      * @return True is returned few ms before the nexct clock.
      */
@@ -155,10 +183,19 @@ public:
     }
 
     /**
+     * @brief Returns whether the transport was stopped explicitly.
+     */
+    inline bool IsTransportStopped() const
+    {
+        return transport_stopped_.load(std::memory_order_relaxed);
+    }
+
+    /**
      * @brief Stops the clock
      */
     inline void Stop()
     {
+        transport_stopped_.store(true, std::memory_order_relaxed);
         clocks_[sync_type_]->Stop();
     }
 
@@ -168,6 +205,9 @@ public:
     inline void Start()
     {
         clocks_[sync_type_]->Start();
+        cycle_count_.store(0, std::memory_order_relaxed);
+        tempo_led_flash_ticks_.store(0, std::memory_order_relaxed);
+        transport_stopped_.store(false, std::memory_order_relaxed);
     }
 
     /**
@@ -176,6 +216,7 @@ public:
     inline void Resume()
     {
         clocks_[sync_type_]->Resume();
+        transport_stopped_.store(false, std::memory_order_relaxed);
     }
 
     /**
@@ -289,6 +330,10 @@ private:
     // Shared stuff
     bool half_duty_state_ = false;
     bool sync_out_state_ = false;
+    std::atomic<bool> transport_stopped_{false};
+    std::atomic<uint32_t> cycle_count_{0};
+    std::atomic<size_t> tempo_led_division_{1};
+    std::atomic<uint32_t> tempo_led_flash_ticks_{0};
 
     // Pot change detection
     PotState pot_state_ = PotState::UNDEFINED;

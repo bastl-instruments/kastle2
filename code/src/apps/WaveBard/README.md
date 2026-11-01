@@ -2,6 +2,15 @@
 
 Sample player firmware for the Kastle 2 platform. Has three main parameters: Sample, Pitch and Length.  
 Bank button switches between banks.   
+
+Hold the Bank button and turn the Sample knob to select 3, 6, 9, 13, 16, 19, 22, 28, or 32 sequencer steps from left to right. The nine choices are evenly distributed across the knob, with 16 steps at the midpoint. The upper-left LED briefly flashes off only when the selected step count changes, and the length takes effect on the next step without restarting playback.
+
+Quickly press and release SHIFT + Bank together to start or stop the sequencer clock. Tap tempo is disabled for this combination in Wave Bard; holding both buttons still enters Settings as before.
+
+The tempo LED flashes once per bar in Wave Bard (once every four beats at 120 BPM). This only slows the indicator, not playback, and avoids the artificial fast-tempo blinking used by other apps.
+
+In Wave Bard, patching the CV feed low randomizes the sequencer CV on each step. The resulting CV is sent from the CV output and can be patched to any compatible input.
+
 By default there are 6 banks of 8 samples.
 
 ## How to build

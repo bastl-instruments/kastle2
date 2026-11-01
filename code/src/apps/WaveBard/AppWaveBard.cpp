@@ -74,6 +74,8 @@ void AppWaveBard::Init()
     Kastle2::base.SetFeatureEnabled(Base::Feature::AUDIO_CHAIN, false);
     Kastle2::base.SetFeatureEnabled(Base::Feature::ENV_OUT, false);
     Kastle2::base.SetFeatureEnabled(Base::Feature::INPUT_INDICATION_CLIP, false);
+    Kastle2::base.SetNegativeFeedRandomEnabled(true);
+    Kastle2::base.SetTapTempoEnabled(false);
 
     // Configure lfo mod mapping
     Kastle2::base.SetLfoModDefaultSelectionEnabled();
@@ -91,6 +93,9 @@ void AppWaveBard::Init()
 
     // Fake Tempo and LFO LEDs
     Kastle2::base.GetFakeBlinker().SetEnabled(true);
+    Kastle2::base.GetFakeBlinker().SetTempoDivision(4);
+    Kastle2::base.GetFakeBlinker().SetTempoFakeBlinkingEnabled(false);
+    Kastle2::base.GetClock().SetTempoLedDivision(4);
 
     // We have two players to prevent clicks when retrigerring/switching samples
     for (auto &player : players_)
@@ -179,6 +184,9 @@ void AppWaveBard::Init()
                                                .midi_cc = cc::FINE,
                                                .deadzone = true,
                                                .memory_addr = kMemPotFine});
+    pots_[Pot::SAMPLE_STEPS] = FancyPot::Create({.pot = Hardware::Pot::POT_6,
+                                                 .layer = Hardware::Layer::MODE,
+                                                 .map_size = 9});
     pots_[Pot::PITCH_QUANTIZED] = FancyPot::Create({.pot = Hardware::Pot::POT_5,
                                                     .layer = Hardware::Layer::MODE});
 
@@ -217,11 +225,21 @@ void AppWaveBard::Init()
     delay_mix_ = Q15_ZERO;
     delay_stereo_left_ = 0;
     delay_stereo_right_ = 0;
+    beat_repeat_clock_tick_pending_.store(false, std::memory_order_relaxed);
+    beat_repeat_selected_.store(false, std::memory_order_relaxed);
+    beat_repeat_ready_ = false;
+    beat_repeat_division_ = -1;
+    beat_repeat_samples_prev_ = UINT64_MAX;
 
     ui_indicate_change_time_ = 0;
+    step_choice_prev_ = SIZE_MAX;
 
     delay_left_ = std::make_unique<AdvancedDynamicDelayLine<q15least_t>>(22000);
     delay_right_ = std::make_unique<AdvancedDynamicDelayLine<q15least_t>>(22000);
+    if constexpr (kBeatRepeatReplacesDelay)
+    {
+        beat_repeat_ready_ = beat_repeat_.Init();
+    }
 
 #ifdef PLAYBACK_CLIPPER
     playback_clipper_.Init(SAMPLE_RATE);
@@ -285,6 +303,10 @@ void AppWaveBard::Init()
 void AppWaveBard::DeInit()
 {
     inited_ = false;
+    Kastle2::base.GetFakeBlinker().SetTempoDivision(1);
+    Kastle2::base.GetFakeBlinker().SetTempoFakeBlinkingEnabled(true);
+    Kastle2::base.GetClock().SetTempoLedDivision(1);
+    Kastle2::base.SetTapTempoEnabled(true);
 }
 
 FASTCODE void AppWaveBard::AudioLoop(q15_t *input, q15_t *output, size_t size)
@@ -292,6 +314,14 @@ FASTCODE void AppWaveBard::AudioLoop(q15_t *input, q15_t *output, size_t size)
     if (!inited_)
     {
         return;
+    }
+
+    if constexpr (kBeatRepeatReplacesDelay)
+    {
+        if (Kastle2::base.IsNowStep())
+        {
+            beat_repeat_clock_tick_pending_.store(true, std::memory_order_relaxed);
+        }
     }
 
     for (auto &pot : pots_)
@@ -507,16 +537,28 @@ FASTCODE void AppWaveBard::SecondCoreProcess(size_t index)
     right = q15_div(filter_.GetRight(), q15(0.768016042f));
 #endif
 
-    // Apply Delay
-    // save delayed sample and prevent hard clipping
+    const q15_t delay_input_left = left;
+    const q15_t delay_input_right = right;
+    bool use_beat_repeat = false;
+    if constexpr (kBeatRepeatReplacesDelay)
+    {
+        const bool clock_tick = beat_repeat_clock_tick_pending_.exchange(false, std::memory_order_relaxed);
+        const auto repeated = beat_repeat_.Process(left, right, clock_tick);
+        left = repeated.left;
+        right = repeated.right;
+        use_beat_repeat = beat_repeat_selected_.load(std::memory_order_relaxed);
+    }
+
+    // Keep the delay lines running so the chorus retains its existing state.
     q15_t delayed_left = soft_clipper_.Process(q15_div(delay_left_->Read(), Q15_HALF));
     q15_t delayed_right = soft_clipper_.Process(q15_div(delay_right_->Read(), Q15_HALF));
-    // update delay with feedback
-    delay_left_->Write(q15_mult(left, Q15_HALF) + q15_mult(delayed_left, delay_feedback_ / 2));
-    delay_right_->Write(q15_mult(right, Q15_HALF) + q15_mult(delayed_right, delay_feedback_ / 2));
-    // add delay to output
-    left = q15_mult(left, Q15_MAX - delay_mix_) + q15_mult(delayed_left, delay_mix_);
-    right = q15_mult(right, Q15_MAX - delay_mix_) + q15_mult(delayed_right, delay_mix_);
+    delay_left_->Write(q15_mult(delay_input_left, Q15_HALF) + q15_mult(delayed_left, delay_feedback_ / 2));
+    delay_right_->Write(q15_mult(delay_input_right, Q15_HALF) + q15_mult(delayed_right, delay_feedback_ / 2));
+    if (!use_beat_repeat)
+    {
+        left = q15_mult(left, Q15_MAX - delay_mix_) + q15_mult(delayed_left, delay_mix_);
+        right = q15_mult(right, Q15_MAX - delay_mix_) + q15_mult(delayed_right, delay_mix_);
+    }
 
     // Mix input after effects if it's set to that
     if (has_audio_input && !input_audio_through_fx_)
@@ -639,6 +681,53 @@ void AppWaveBard::UiLoop()
 
     // Read the bank selector, does the button switching etc.
     bank_select_.ReadValue();
+
+    const bool shift_pressed = Kastle2::hw.Pressed(Hardware::Button::SHIFT);
+    const bool bank_pressed = Kastle2::hw.Pressed(Hardware::Button::MODE);
+    const auto layer = Kastle2::hw.GetLayer();
+    const bool in_settings = layer == Hardware::Layer::SETTINGS ||
+                             layer == Hardware::Layer::SETTINGS_SHIFT ||
+                             layer == Hardware::Layer::SETTINGS_MODE;
+
+    if (!transport_chord_pending_ && shift_pressed && bank_pressed && !in_settings &&
+        Kastle2::hw.PressedMillis(Hardware::Button::SHIFT) <= kTransportChordMaxPressDeltaMs &&
+        Kastle2::hw.PressedMillis(Hardware::Button::MODE) <= kTransportChordMaxPressDeltaMs)
+    {
+        transport_chord_pending_ = true;
+        transport_chord_started_at_ = get_absolute_time();
+    }
+
+    if (transport_chord_pending_ && (!shift_pressed || !bank_pressed))
+    {
+        const int64_t chord_duration_us = absolute_time_diff_us(transport_chord_started_at_, get_absolute_time());
+        if (chord_duration_us <= kTransportChordMaxHoldUs)
+        {
+            auto &clock = Kastle2::base.GetClock();
+            if (clock.IsTransportStopped())
+            {
+                clock.Start();
+            }
+            else
+            {
+                clock.Stop();
+            }
+            UiIndicateChange();
+        }
+        transport_chord_pending_ = false;
+    }
+
+    if (Kastle2::hw.GetLayer() == Hardware::Layer::MODE &&
+        pots_[Pot::SAMPLE_STEPS]->HasChanged())
+    {
+        static constexpr size_t kSequencerLengths[] = {3, 6, 9, 13, 16, 19, 22, 28, 32};
+        const size_t step_choice = constrain(pots_[Pot::SAMPLE_STEPS]->GetMappedValue(), 0, 8);
+        if (step_choice != step_choice_prev_)
+        {
+            step_choice_prev_ = step_choice;
+            Kastle2::base.GetSequencer().SetLengthAtNextStep(kSequencerLengths[step_choice]);
+            UiIndicateChange();
+        }
+    }
 
     // Do switching magic
     if (Kastle2::hw.GetLayer() != Kastle2::base.GetPrevLayer())
@@ -981,8 +1070,65 @@ void AppWaveBard::UiLoop()
     int32_t delay_left_val = 0;
     int32_t delay_right_val = 0;
 
+    if constexpr (kBeatRepeatReplacesDelay)
+    {
+        int32_t division = 0;
+        if (fx_pot < POT_HALF)
+        {
+            if (fx_pot >= (POT_HALF * 2) / 3)
+            {
+                division = 8;
+            }
+            else if (fx_pot >= POT_HALF / 3)
+            {
+                division = 16;
+            }
+            else
+            {
+                division = 32;
+            }
+        }
+
+        if (division == 0)
+        {
+            if (beat_repeat_division_ != 0)
+            {
+                beat_repeat_division_ = 0;
+                beat_repeat_samples_prev_ = UINT64_MAX;
+                beat_repeat_selected_.store(false, std::memory_order_relaxed);
+                if (beat_repeat_ready_)
+                {
+                    beat_repeat_.RequestRepeat(0);
+                }
+            }
+        }
+        else if (beat_repeat_ready_)
+        {
+            const uint64_t step_samples = static_cast<uint64_t>(Kastle2::base.GetClock().GetAverageTargetTicks()) * buffer_size_;
+            if (step_samples > 0)
+            {
+                // Wave Bard's sequencer clock advances in sixteenth-note steps.
+                const uint64_t requested_samples = division == 8 ? step_samples * 2 : (division == 16 ? step_samples : (step_samples + 1) / 2);
+                const uint64_t sample_change = requested_samples > beat_repeat_samples_prev_
+                                                   ? requested_samples - beat_repeat_samples_prev_
+                                                   : beat_repeat_samples_prev_ - requested_samples;
+                const uint64_t change_threshold = std::max<uint64_t>(16, requested_samples / 100);
+                if (division != beat_repeat_division_ || sample_change > change_threshold)
+                {
+                    beat_repeat_division_ = division;
+                    beat_repeat_samples_prev_ = requested_samples;
+                    beat_repeat_selected_.store(true, std::memory_order_relaxed);
+                    if (!beat_repeat_.RequestRepeat(static_cast<size_t>(requested_samples)))
+                    {
+                        beat_repeat_.RequestRepeat(0);
+                    }
+                }
+            }
+        }
+    }
+
     // Normal delay to the left
-    if (fx_pot < pot(0.45f))
+    if ((!kBeatRepeatReplacesDelay || !beat_repeat_ready_) && fx_pot < pot(0.45f))
     {
         // Possibility of an overflow here, I don't think I need to check for it though
         int32_t delay_ticks_now = ((Kastle2::base.GetClock().GetAverageTargetTicks() * buffer_size_) * kDelayRatio.n) / kDelayRatio.d;

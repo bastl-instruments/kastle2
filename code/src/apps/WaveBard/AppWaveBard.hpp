@@ -25,8 +25,10 @@ SOFTWARE.
 
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include "pico/stdlib.h"
 #include "common/EnumTools.hpp"
 #include "common/controls/DirtyInputsHandler.hpp"
 #include "common/controls/FancyMode.hpp"
@@ -46,6 +48,7 @@ SOFTWARE.
 #include "common/dsp/utility/AutoFreeze.hpp"
 #include "common/dsp/utility/Quantizer.hpp"
 #include "common/dsp/utility/Slewer.hpp"
+#include "BeatRepeatPrototype.hpp"
 #include "common/fastcode.hpp"
 #include "common/peripherals/WS2812.hpp"
 #include "WaveBardFile.hpp"
@@ -113,6 +116,8 @@ public:
     }
 
 private:
+    static constexpr bool kBeatRepeatReplacesDelay = true;
+
     /**
      * @brief Flag indicating whether the app has been initialized.
      */
@@ -146,6 +151,7 @@ private:
     enum class Pot
     {
         SAMPLE,
+        SAMPLE_STEPS,
         SAMPLE_MOD,
         PITCH,
         PITCH_MOD,
@@ -317,6 +323,16 @@ private:
     size_t ui_indicate_change_time_ = 0;
 
     /**
+     * @brief Previous sequencer-length pot choice.
+     */
+    size_t step_choice_prev_ = SIZE_MAX;
+
+    static constexpr uint32_t kTransportChordMaxPressDeltaMs = 250;
+    static constexpr int64_t kTransportChordMaxHoldUs = 500000;
+    bool transport_chord_pending_ = false;
+    absolute_time_t transport_chord_started_at_{};
+
+    /**
      * @brief UI loop counter for performance optimization (not all stuff needs to be done each UI loop).
      */
     size_t ui_loop_counter_ = 0;
@@ -440,6 +456,13 @@ private:
      * @brief Dynamic delay line for right channel processing.
      */
     std::unique_ptr<AdvancedDynamicDelayLine<q15least_t>> delay_right_;
+
+    BeatRepeatPrototype beat_repeat_;
+    std::atomic<bool> beat_repeat_clock_tick_pending_{false};
+    std::atomic<bool> beat_repeat_selected_{false};
+    bool beat_repeat_ready_ = false;
+    int32_t beat_repeat_division_ = -1;
+    uint64_t beat_repeat_samples_prev_ = UINT64_MAX;
 
     /**
      * @brief Envelope follower for FX compression.

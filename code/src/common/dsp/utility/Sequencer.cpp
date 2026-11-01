@@ -50,7 +50,15 @@ void Sequencer::Init(const size_t length)
 void Sequencer::SetLength(const size_t length)
 {
     length_ = length > kMaxLength ? kMaxLength : (length < kMinLength ? kMinLength : length);
+    pending_length_.store(0, std::memory_order_relaxed);
     Reset();
+}
+
+void Sequencer::SetLengthAtNextStep(const size_t length)
+{
+    pending_length_.store(
+        length > kMaxLength ? kMaxLength : (length < kMinLength ? kMinLength : length),
+        std::memory_order_relaxed);
 }
 
 size_t Sequencer::GetLength() const
@@ -87,6 +95,13 @@ void Sequencer::RealignTo(const size_t steps)
 
 void Sequencer::NextStep(const Feed trigger_feed, const Feed cv_feed)
 {
+    const size_t pending_length = pending_length_.exchange(0, std::memory_order_relaxed);
+    if (pending_length > 0)
+    {
+        length_ = pending_length;
+        current_step_ %= length_;
+    }
+
     reaching_next_cycle_ = false;
 
     // This call consumes whatever swing step was scheduled, no matter who triggered it.
