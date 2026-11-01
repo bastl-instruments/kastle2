@@ -25,7 +25,6 @@ SOFTWARE.
 
 #pragma once
 
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include "pico/stdlib.h"
@@ -48,7 +47,6 @@ SOFTWARE.
 #include "common/dsp/utility/AutoFreeze.hpp"
 #include "common/dsp/utility/Quantizer.hpp"
 #include "common/dsp/utility/Slewer.hpp"
-#include "BeatRepeatPrototype.hpp"
 #include "common/fastcode.hpp"
 #include "common/peripherals/WS2812.hpp"
 #include "WaveBardFile.hpp"
@@ -116,8 +114,6 @@ public:
     }
 
 private:
-    static constexpr bool kBeatRepeatReplacesDelay = true;
-
     /**
      * @brief Flag indicating whether the app has been initialized.
      */
@@ -456,13 +452,6 @@ private:
      * @brief Dynamic delay line for right channel processing.
      */
     std::unique_ptr<AdvancedDynamicDelayLine<q15least_t>> delay_right_;
-
-    BeatRepeatPrototype beat_repeat_;
-    std::atomic<bool> beat_repeat_clock_tick_pending_{false};
-    std::atomic<bool> beat_repeat_selected_{false};
-    bool beat_repeat_ready_ = false;
-    int32_t beat_repeat_division_ = -1;
-    uint64_t beat_repeat_samples_prev_ = UINT64_MAX;
 
     /**
      * @brief Envelope follower for FX compression.

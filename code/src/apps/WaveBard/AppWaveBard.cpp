@@ -225,21 +225,12 @@ void AppWaveBard::Init()
     delay_mix_ = Q15_ZERO;
     delay_stereo_left_ = 0;
     delay_stereo_right_ = 0;
-    beat_repeat_clock_tick_pending_.store(false, std::memory_order_relaxed);
-    beat_repeat_selected_.store(false, std::memory_order_relaxed);
-    beat_repeat_ready_ = false;
-    beat_repeat_division_ = -1;
-    beat_repeat_samples_prev_ = UINT64_MAX;
 
     ui_indicate_change_time_ = 0;
     step_choice_prev_ = SIZE_MAX;
 
     delay_left_ = std::make_unique<AdvancedDynamicDelayLine<q15least_t>>(22000);
     delay_right_ = std::make_unique<AdvancedDynamicDelayLine<q15least_t>>(22000);
-    if constexpr (kBeatRepeatReplacesDelay)
-    {
-        beat_repeat_ready_ = beat_repeat_.Init();
-    }
 
 #ifdef PLAYBACK_CLIPPER
     playback_clipper_.Init(SAMPLE_RATE);
@@ -314,14 +305,6 @@ FASTCODE void AppWaveBard::AudioLoop(q15_t *input, q15_t *output, size_t size)
     if (!inited_)
     {
         return;
-    }
-
-    if constexpr (kBeatRepeatReplacesDelay)
-    {
-        if (Kastle2::base.IsNowStep())
-        {
-            beat_repeat_clock_tick_pending_.store(true, std::memory_order_relaxed);
-        }
     }
 
     for (auto &pot : pots_)
@@ -539,26 +522,13 @@ FASTCODE void AppWaveBard::SecondCoreProcess(size_t index)
 
     const q15_t delay_input_left = left;
     const q15_t delay_input_right = right;
-    bool use_beat_repeat = false;
-    if constexpr (kBeatRepeatReplacesDelay)
-    {
-        const bool clock_tick = beat_repeat_clock_tick_pending_.exchange(false, std::memory_order_relaxed);
-        const auto repeated = beat_repeat_.Process(left, right, clock_tick);
-        left = repeated.left;
-        right = repeated.right;
-        use_beat_repeat = beat_repeat_selected_.load(std::memory_order_relaxed);
-    }
 
-    // Keep the delay lines running so the chorus retains its existing state.
     q15_t delayed_left = soft_clipper_.Process(q15_div(delay_left_->Read(), Q15_HALF));
     q15_t delayed_right = soft_clipper_.Process(q15_div(delay_right_->Read(), Q15_HALF));
     delay_left_->Write(q15_mult(delay_input_left, Q15_HALF) + q15_mult(delayed_left, delay_feedback_ / 2));
     delay_right_->Write(q15_mult(delay_input_right, Q15_HALF) + q15_mult(delayed_right, delay_feedback_ / 2));
-    if (!use_beat_repeat)
-    {
-        left = q15_mult(left, Q15_MAX - delay_mix_) + q15_mult(delayed_left, delay_mix_);
-        right = q15_mult(right, Q15_MAX - delay_mix_) + q15_mult(delayed_right, delay_mix_);
-    }
+    left = q15_mult(left, Q15_MAX - delay_mix_) + q15_mult(delayed_left, delay_mix_);
+    right = q15_mult(right, Q15_MAX - delay_mix_) + q15_mult(delayed_right, delay_mix_);
 
     // Mix input after effects if it's set to that
     if (has_audio_input && !input_audio_through_fx_)
@@ -1070,65 +1040,8 @@ void AppWaveBard::UiLoop()
     int32_t delay_left_val = 0;
     int32_t delay_right_val = 0;
 
-    if constexpr (kBeatRepeatReplacesDelay)
-    {
-        int32_t division = 0;
-        if (fx_pot < POT_HALF)
-        {
-            if (fx_pot >= (POT_HALF * 2) / 3)
-            {
-                division = 8;
-            }
-            else if (fx_pot >= POT_HALF / 3)
-            {
-                division = 16;
-            }
-            else
-            {
-                division = 32;
-            }
-        }
-
-        if (division == 0)
-        {
-            if (beat_repeat_division_ != 0)
-            {
-                beat_repeat_division_ = 0;
-                beat_repeat_samples_prev_ = UINT64_MAX;
-                beat_repeat_selected_.store(false, std::memory_order_relaxed);
-                if (beat_repeat_ready_)
-                {
-                    beat_repeat_.RequestRepeat(0);
-                }
-            }
-        }
-        else if (beat_repeat_ready_)
-        {
-            const uint64_t step_samples = static_cast<uint64_t>(Kastle2::base.GetClock().GetAverageTargetTicks()) * buffer_size_;
-            if (step_samples > 0)
-            {
-                // Wave Bard's sequencer clock advances in sixteenth-note steps.
-                const uint64_t requested_samples = division == 8 ? step_samples * 2 : (division == 16 ? step_samples : (step_samples + 1) / 2);
-                const uint64_t sample_change = requested_samples > beat_repeat_samples_prev_
-                                                   ? requested_samples - beat_repeat_samples_prev_
-                                                   : beat_repeat_samples_prev_ - requested_samples;
-                const uint64_t change_threshold = std::max<uint64_t>(16, requested_samples / 100);
-                if (division != beat_repeat_division_ || sample_change > change_threshold)
-                {
-                    beat_repeat_division_ = division;
-                    beat_repeat_samples_prev_ = requested_samples;
-                    beat_repeat_selected_.store(true, std::memory_order_relaxed);
-                    if (!beat_repeat_.RequestRepeat(static_cast<size_t>(requested_samples)))
-                    {
-                        beat_repeat_.RequestRepeat(0);
-                    }
-                }
-            }
-        }
-    }
-
     // Normal delay to the left
-    if ((!kBeatRepeatReplacesDelay || !beat_repeat_ready_) && fx_pot < pot(0.45f))
+    if (fx_pot < pot(0.45f))
     {
         // Possibility of an overflow here, I don't think I need to check for it though
         int32_t delay_ticks_now = ((Kastle2::base.GetClock().GetAverageTargetTicks() * buffer_size_) * kDelayRatio.n) / kDelayRatio.d;
