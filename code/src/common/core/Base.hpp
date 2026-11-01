@@ -24,6 +24,7 @@ SOFTWARE.
 
 #pragma once
 
+#include <atomic>
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
@@ -94,6 +95,16 @@ public:
      * @param enabled True to enable, false to disable.
      */
     void SetFeatureEnabled(Feature feature, bool enabled);
+
+    /**
+     * @brief Makes negative feed inputs randomize the sequencer instead of inverting it.
+     */
+    void SetNegativeFeedRandomEnabled(bool enabled);
+
+    /**
+     * @brief Enables or disables tap tempo from the SHIFT + MODE button combination.
+     */
+    void SetTapTempoEnabled(bool enabled);
 
     /**
      * @brief Checks if a feature is enabled.
@@ -388,6 +399,8 @@ private:
 
     Sequencer::Feed pending_trigger_feed_ = Sequencer::Feed::SAME;
     Sequencer::Feed pending_cv_feed_ = Sequencer::Feed::SAME;
+    bool negative_feed_random_enabled_ = false;
+    std::atomic<bool> tap_tempo_enabled_{true};
 
     // Ticks left of the current gate. Counted from the step that actually fired rather
     // than from the clock cycle, so a swung step still gets its full gate length.

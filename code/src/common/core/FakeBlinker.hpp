@@ -67,14 +67,21 @@ public:
      */
     bool GetTempoLedState(const Clock &clock) const
     {
-        bool fake_blinking = enabled_ && clock.GetTargetTicks() < tempo_threshold_;
+        if (tempo_division_ > 1)
+        {
+            return clock.IsTempoLedFlashActive();
+        }
+
+        bool fake_blinking = enabled_ && tempo_fake_blinking_enabled_ &&
+                             clock.GetTargetTicks() < tempo_threshold_;
+        bool show_this_cycle = clock.GetCycleCount() % tempo_division_ == 0;
         // Fake the blinking based on the internal state
         if (fake_blinking)
         {
-            return state_;
+            return state_ && show_this_cycle;
         }
         // Normal operation
-        return clock.GetHalfDutyOutput() || (clock.GetTargetTicks() == 0);
+        return (show_this_cycle && clock.GetHalfDutyOutput()) || (clock.GetTargetTicks() == 0);
     }
 
     /**
@@ -119,6 +126,22 @@ public:
     }
 
     /**
+     * @brief Sets how many clock cycles to skip between tempo LED flashes.
+     */
+    void SetTempoDivision(size_t division)
+    {
+        tempo_division_ = division > 0 ? division : 1;
+    }
+
+    /**
+     * @brief Enables or disables the fake tempo blink used at very high clock rates.
+     */
+    void SetTempoFakeBlinkingEnabled(bool enabled)
+    {
+        tempo_fake_blinking_enabled_ = enabled;
+    }
+
+    /**
      * @brief Sets the LFO phase increment threshold above which fake blinking is used.
      * @param lfo_phase_inc LFO phase increment threshold.
      * @note Default: q31(0.03f).
@@ -132,6 +155,8 @@ private:
     bool enabled_ = false;
     bool state_ = false;
     size_t tempo_threshold_ = 60;
+    size_t tempo_division_ = 1;
+    bool tempo_fake_blinking_enabled_ = true;
     q31_t lfo_threshold_ = q31(0.03f);
 };
 }

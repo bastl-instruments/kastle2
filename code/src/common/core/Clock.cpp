@@ -39,6 +39,11 @@ namespace kastle2
 
 void Clock::Init(float sample_rate)
 {
+    transport_stopped_.store(false, std::memory_order_relaxed);
+    cycle_count_.store(0, std::memory_order_relaxed);
+    tempo_led_division_.store(1, std::memory_order_relaxed);
+    tempo_led_flash_ticks_.store(0, std::memory_order_relaxed);
+
     clocks_[Sync::INTERNAL] = std::make_unique<InternalClockSource>();
     clocks_[Sync::EXTERNAL] = std::make_unique<ExternalClockSource>();
     clocks_[Sync::MIDI] = std::make_unique<MidiClockSource>();
@@ -52,7 +57,8 @@ void Clock::Init(float sample_rate)
 
 bool Clock::IsOutputEnabled() const
 {
-    return ((tap_state_ == TapState::ACTIVE ||
+    return !transport_stopped_.load(std::memory_order_relaxed) &&
+           ((tap_state_ == TapState::ACTIVE ||
              tap_state_ == TapState::NONE) &&
             GetState() == ClockSource::State::RUNNING);
 }
@@ -95,6 +101,12 @@ bool Clock::Process(bool raw_tap_input, bool raw_sync_input, bool midi_pulse_inp
         clock_impl->Process(raw_sync_input, midi_pulse_input);
     }
 
+    uint32_t flash_ticks_remaining = tempo_led_flash_ticks_.load(std::memory_order_relaxed);
+    if (flash_ticks_remaining > 0)
+    {
+        tempo_led_flash_ticks_.store(flash_ticks_remaining - 1, std::memory_order_relaxed);
+    }
+
     for (Sync type : EnumRange<Sync>())
     {
         if (clocks_[type]->GetState() != ClockSource::State::UNAVAILABLE)
@@ -121,6 +133,12 @@ bool Clock::Process(bool raw_tap_input, bool raw_sync_input, bool midi_pulse_inp
     bool now_trigger = IsNowTrigger();
     if (now_trigger)
     {
+        const uint32_t cycle_count = cycle_count_.fetch_add(1, std::memory_order_relaxed) + 1;
+        const size_t tempo_led_division = tempo_led_division_.load(std::memory_order_relaxed);
+        if (cycle_count % tempo_led_division == 0)
+        {
+            tempo_led_flash_ticks_.store(s2alr(0.1f), std::memory_order_relaxed);
+        }
         half_duty_state_ = true;
         sync_out_state_ = true;
         avg_target_ticks_.Add(GetTargetTicks());

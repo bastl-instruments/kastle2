@@ -74,6 +74,8 @@ void AppWaveBard::Init()
     Kastle2::base.SetFeatureEnabled(Base::Feature::AUDIO_CHAIN, false);
     Kastle2::base.SetFeatureEnabled(Base::Feature::ENV_OUT, false);
     Kastle2::base.SetFeatureEnabled(Base::Feature::INPUT_INDICATION_CLIP, false);
+    Kastle2::base.SetNegativeFeedRandomEnabled(true);
+    Kastle2::base.SetTapTempoEnabled(false);
 
     // Configure lfo mod mapping
     Kastle2::base.SetLfoModDefaultSelectionEnabled();
@@ -91,6 +93,9 @@ void AppWaveBard::Init()
 
     // Fake Tempo and LFO LEDs
     Kastle2::base.GetFakeBlinker().SetEnabled(true);
+    Kastle2::base.GetFakeBlinker().SetTempoDivision(4);
+    Kastle2::base.GetFakeBlinker().SetTempoFakeBlinkingEnabled(false);
+    Kastle2::base.GetClock().SetTempoLedDivision(4);
 
     // We have two players to prevent clicks when retrigerring/switching samples
     for (auto &player : players_)
@@ -179,6 +184,9 @@ void AppWaveBard::Init()
                                                .midi_cc = cc::FINE,
                                                .deadzone = true,
                                                .memory_addr = kMemPotFine});
+    pots_[Pot::SAMPLE_STEPS] = FancyPot::Create({.pot = Hardware::Pot::POT_6,
+                                                 .layer = Hardware::Layer::MODE,
+                                                 .map_size = 9});
     pots_[Pot::PITCH_QUANTIZED] = FancyPot::Create({.pot = Hardware::Pot::POT_5,
                                                     .layer = Hardware::Layer::MODE});
 
@@ -219,6 +227,7 @@ void AppWaveBard::Init()
     delay_stereo_right_ = 0;
 
     ui_indicate_change_time_ = 0;
+    step_choice_prev_ = SIZE_MAX;
 
     delay_left_ = std::make_unique<AdvancedDynamicDelayLine<q15least_t>>(22000);
     delay_right_ = std::make_unique<AdvancedDynamicDelayLine<q15least_t>>(22000);
@@ -285,6 +294,10 @@ void AppWaveBard::Init()
 void AppWaveBard::DeInit()
 {
     inited_ = false;
+    Kastle2::base.GetFakeBlinker().SetTempoDivision(1);
+    Kastle2::base.GetFakeBlinker().SetTempoFakeBlinkingEnabled(true);
+    Kastle2::base.GetClock().SetTempoLedDivision(1);
+    Kastle2::base.SetTapTempoEnabled(true);
 }
 
 FASTCODE void AppWaveBard::AudioLoop(q15_t *input, q15_t *output, size_t size)
@@ -507,14 +520,13 @@ FASTCODE void AppWaveBard::SecondCoreProcess(size_t index)
     right = q15_div(filter_.GetRight(), q15(0.768016042f));
 #endif
 
-    // Apply Delay
-    // save delayed sample and prevent hard clipping
+    const q15_t delay_input_left = left;
+    const q15_t delay_input_right = right;
+
     q15_t delayed_left = soft_clipper_.Process(q15_div(delay_left_->Read(), Q15_HALF));
     q15_t delayed_right = soft_clipper_.Process(q15_div(delay_right_->Read(), Q15_HALF));
-    // update delay with feedback
-    delay_left_->Write(q15_mult(left, Q15_HALF) + q15_mult(delayed_left, delay_feedback_ / 2));
-    delay_right_->Write(q15_mult(right, Q15_HALF) + q15_mult(delayed_right, delay_feedback_ / 2));
-    // add delay to output
+    delay_left_->Write(q15_mult(delay_input_left, Q15_HALF) + q15_mult(delayed_left, delay_feedback_ / 2));
+    delay_right_->Write(q15_mult(delay_input_right, Q15_HALF) + q15_mult(delayed_right, delay_feedback_ / 2));
     left = q15_mult(left, Q15_MAX - delay_mix_) + q15_mult(delayed_left, delay_mix_);
     right = q15_mult(right, Q15_MAX - delay_mix_) + q15_mult(delayed_right, delay_mix_);
 
@@ -639,6 +651,53 @@ void AppWaveBard::UiLoop()
 
     // Read the bank selector, does the button switching etc.
     bank_select_.ReadValue();
+
+    const bool shift_pressed = Kastle2::hw.Pressed(Hardware::Button::SHIFT);
+    const bool bank_pressed = Kastle2::hw.Pressed(Hardware::Button::MODE);
+    const auto layer = Kastle2::hw.GetLayer();
+    const bool in_settings = layer == Hardware::Layer::SETTINGS ||
+                             layer == Hardware::Layer::SETTINGS_SHIFT ||
+                             layer == Hardware::Layer::SETTINGS_MODE;
+
+    if (!transport_chord_pending_ && shift_pressed && bank_pressed && !in_settings &&
+        Kastle2::hw.PressedMillis(Hardware::Button::SHIFT) <= kTransportChordMaxPressDeltaMs &&
+        Kastle2::hw.PressedMillis(Hardware::Button::MODE) <= kTransportChordMaxPressDeltaMs)
+    {
+        transport_chord_pending_ = true;
+        transport_chord_started_at_ = get_absolute_time();
+    }
+
+    if (transport_chord_pending_ && (!shift_pressed || !bank_pressed))
+    {
+        const int64_t chord_duration_us = absolute_time_diff_us(transport_chord_started_at_, get_absolute_time());
+        if (chord_duration_us <= kTransportChordMaxHoldUs)
+        {
+            auto &clock = Kastle2::base.GetClock();
+            if (clock.IsTransportStopped())
+            {
+                clock.Start();
+            }
+            else
+            {
+                clock.Stop();
+            }
+            UiIndicateChange();
+        }
+        transport_chord_pending_ = false;
+    }
+
+    if (Kastle2::hw.GetLayer() == Hardware::Layer::MODE &&
+        pots_[Pot::SAMPLE_STEPS]->HasChanged())
+    {
+        static constexpr size_t kSequencerLengths[] = {3, 6, 9, 13, 16, 19, 22, 28, 32};
+        const size_t step_choice = constrain(pots_[Pot::SAMPLE_STEPS]->GetMappedValue(), 0, 8);
+        if (step_choice != step_choice_prev_)
+        {
+            step_choice_prev_ = step_choice;
+            Kastle2::base.GetSequencer().SetLengthAtNextStep(kSequencerLengths[step_choice]);
+            UiIndicateChange();
+        }
+    }
 
     // Do switching magic
     if (Kastle2::hw.GetLayer() != Kastle2::base.GetPrevLayer())

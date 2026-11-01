@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
@@ -122,6 +123,12 @@ public:
      * @warning Lengths below 6 are not recommended (since CV is based on bits 0,3,5). With length 3 you may get constant CV output.
      */
     void SetLength(const size_t length);
+
+    /**
+     * @brief Sets the sequence length at the next step without resetting playback.
+     * @param length The number of steps to use (clamped between kMinLength and kMaxLength)
+     */
+    void SetLengthAtNextStep(const size_t length);
 
     /**
      * @brief Gets the current sequence length.
@@ -308,6 +315,11 @@ private:
      * @brief Active sequence length.
      */
     size_t length_ = 0;
+
+    /**
+     * @brief Sequence length waiting to be applied at the next step; zero means no change is pending.
+     */
+    std::atomic<size_t> pending_length_{0};
 
     /**
      * @brief Current step position in the sequence.

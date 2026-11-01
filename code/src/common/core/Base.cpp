@@ -278,6 +278,16 @@ void Base::SetFeatureEnabled(Feature feature, bool enabled)
     features_enabled_.set(static_cast<size_t>(feature), enabled);
 }
 
+void Base::SetNegativeFeedRandomEnabled(bool enabled)
+{
+    negative_feed_random_enabled_ = enabled;
+}
+
+void Base::SetTapTempoEnabled(bool enabled)
+{
+    tap_tempo_enabled_.store(enabled, std::memory_order_relaxed);
+}
+
 bool Base::IsFeatureEnabled(Feature feature) const
 {
     return features_enabled_.test(static_cast<size_t>(feature));
@@ -473,7 +483,8 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
     lfo_pulse_value_ = lfo_.GetSquareOut();
 
     // Tap tempo
-    bool tap_state = Kastle2::hw.GetLayer() == Hardware::Layer::SHIFT &&
+    bool tap_state = tap_tempo_enabled_.load(std::memory_order_relaxed) &&
+                     Kastle2::hw.GetLayer() == Hardware::Layer::SHIFT &&
                      Kastle2::hw.GetRawButtonState(Hardware::Button::MODE);
 
     // Set external sync
@@ -521,7 +532,7 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
             switch (feed1)
             {
             case Hardware::FeedValue::LOW:
-                trigger_feed = Sequencer::Feed::INVERT;
+                trigger_feed = negative_feed_random_enabled_ ? Sequencer::Feed::RANDOM : Sequencer::Feed::INVERT;
                 break;
             case Hardware::FeedValue::HIGH:
                 trigger_feed = Sequencer::Feed::RANDOM;
@@ -537,7 +548,7 @@ FASTCODE void Base::BeforeAudioLoop(q15_t *input, size_t size)
             switch (feed3)
             {
             case Hardware::FeedValue::LOW:
-                cv_feed = Sequencer::Feed::INVERT;
+                cv_feed = negative_feed_random_enabled_ ? Sequencer::Feed::RANDOM : Sequencer::Feed::INVERT;
                 break;
             case Hardware::FeedValue::HIGH:
                 cv_feed = Sequencer::Feed::RANDOM;
